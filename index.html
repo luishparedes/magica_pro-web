@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Mágica</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Incluye el contenido del CSS aquí */
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Calculadora Mágica</h2>
+        <section>
+            <h3>Sección 1: Datos del Producto</h3>
+            <input type="text" id="producto" placeholder="Nombre del producto" required>
+            <input type="number" id="costo" placeholder="Costo del producto" required>
+            <select id="moneda" required>
+                <option value="USD">$ (Dólares)</option>
+                <option value="PESO">$ (Pesos)</option>
+                <option value="BS">Bs (Bolívares)</option>
+            </select>
+            <select id="descripcion" required>
+                <option value="">Selecciona una descripción</option>
+                <option value="viveres">Víveres</option>
+                <option value="gaseosas">Gaseosas</option>
+                <option value="lacteos">Lácteos</option>
+                <option value="enlatados">Enlatados</option>
+                <option value="frigorifico">Frigorífico</option>
+                <option value="charcuteria">Charcutería</option>
+                <option value="confiteria">Confitería</option>
+                <option value="quincalleria">Quincallería</option>
+                <option value="peluqueria">Peluquería</option>
+            </select>
+        </section>
+        <section>
+            <h3>Sección 2: Precio de Venta</h3>
+            <input type="number" id="ganancia" placeholder="Porcentaje de ganancia" required>
+            <input type="number" id="unidades" placeholder="Cantidad de unidades" required>
+            <button onclick="calcularPrecioVenta()">Calcular Precio de Venta</button>
+            <p id="resultadoPrecioVenta">Precio al mayor: </p>
+            <p id="precioUnitario">Precio unitario: </p>
+        </section>
+        <button onclick="guardarProducto()">Guardar Producto</button>
+    </div>
+    <div class="menu">
+        <button onclick="compartirLista()">Compartir Lista via WhatsApp</button>
+    </div>
+    <div id="listaProductos"></div>
+    <script src="script.js"></script>
+    <script>
+        /* Incluye el contenido del JavaScript aquí */
+    </script>
+</body>
+</html>
