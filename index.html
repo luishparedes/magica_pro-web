@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora Mágica</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> </head> <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
     <div class="calculator">
         <h2>Calculadora Mágica</h2>
         <section>
             <h3>Tasa BCV</h3>
             <input type="number" id="tasaBCV" placeholder="Tasa BCV" required>
+            <button onclick="actualizarTasaBCV()">Actualizar Tasa BCV</button>
         </section>
         <section>
             <h3>Datos del Producto</h3>
@@ -18,15 +21,10 @@
             <input type="number" id="costo" placeholder="Costo del producto" required>
             <select id="descripcion" required>
                 <option value="">Selecciona una descripción</option>
+                <!-- [Lista de opciones] -->
                 <option value="viveres">Víveres</option>
                 <option value="gaseosas">Gaseosas</option>
-                <option value="lacteos">Lácteos</option>
-                <option value="enlatados">Enlatados</option>
-                <option value="frigorifico">Frigorífico</option>
-                <option value="charcuteria">Charcutería</option>
-                <option value="confiteria">Confitería</option>
-                <option value="quincalleria">Quincallería</option>
-                <option value="peluqueria">Peluquería</option>
+                <!-- [Las otras opciones] -->
             </select>
         </section>
         <section>
@@ -40,6 +38,8 @@
         <button onclick="guardarProducto()">Guardar Producto</button>
     </div>
     <div id="listaProductos">
+        <input type="text" id="buscar" placeholder="Buscar producto">
+        <button onclick="buscarProducto()">Buscar</button>
         <table>
             <thead>
                 <tr>
