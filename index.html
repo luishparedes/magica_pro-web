@@ -5,22 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora Mágica</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Incluye el contenido del CSS aquí */
-    </style>
-</head>
-<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> </head> <body>
     <div class="calculator">
         <h2>Calculadora Mágica</h2>
         <section>
-            <h3>Sección 1: Datos del Producto</h3>
+            <h3>Tasa BCV</h3>
+            <input type="number" id="tasaBCV" placeholder="Tasa BCV" required>
+        </section>
+        <section>
+            <h3>Datos del Producto</h3>
             <input type="text" id="producto" placeholder="Nombre del producto" required>
             <input type="number" id="costo" placeholder="Costo del producto" required>
-            <select id="moneda" required>
-                <option value="USD">$ (Dólares)</option>
-                <option value="PESO">$ (Pesos)</option>
-                <option value="BS">Bs (Bolívares)</option>
-            </select>
             <select id="descripcion" required>
                 <option value="">Selecciona una descripción</option>
                 <option value="viveres">Víveres</option>
@@ -35,7 +30,7 @@
             </select>
         </section>
         <section>
-            <h3>Sección 2: Precio de Venta</h3>
+            <h3>Precio de Venta</h3>
             <input type="number" id="ganancia" placeholder="Porcentaje de ganancia" required>
             <input type="number" id="unidades" placeholder="Cantidad de unidades" required>
             <button onclick="calcularPrecioVenta()">Calcular Precio de Venta</button>
@@ -44,13 +39,25 @@
         </section>
         <button onclick="guardarProducto()">Guardar Producto</button>
     </div>
-    <div class="menu">
-        <button onclick="compartirLista()">Compartir Lista via WhatsApp</button>
+    <div id="listaProductos">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Descripción</th>
+                    <th>Precio Mayor ($)</th>
+                    <th>Precio Mayor (Bs)</th>
+                    <th>Precio Unitario ($)</th>
+                    <th>Precio Unitario (Bs)</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <button onclick="generarPDF()">Generar PDF</button>
+        <button onclick="limpiarLista()">Limpiar Lista</button>
     </div>
-    <div id="listaProductos"></div>
     <script src="script.js"></script>
-    <script>
-        /* Incluye el contenido del JavaScript aquí */
-    </script>
 </body>
 </html>
