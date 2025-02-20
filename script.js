@@ -78,6 +78,41 @@ function actualizarLista() {
     });
 }
 
+function actualizarTasaBCV() {
+    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
+
+    if (isNaN(tasaBCV)) {
+        alert("Por favor, ingrese una tasa BCV válida.");
+        return;
+    }
+
+    productos.forEach(producto => {
+        const precioDolar = producto.costo / (1 - producto.ganancia);
+        const precioBolivares = precioDolar * tasaBCV;
+
+        producto.precioMayorBolivar = precioBolivares;
+        producto.precioUnitarioBolivar = precioBolivares / producto.unidades;
+    });
+
+    localStorage.setItem('productos', JSON.stringify(productos));
+    actualizarLista();
+}
+
+function buscarProducto() {
+    const filtro = document.getElementById('buscar').value.toLowerCase();
+    const tbody = document.querySelector('#listaProductos tbody');
+    const filas = tbody.querySelectorAll('tr');
+
+    filas.forEach(fila => {
+        const nombre = fila.querySelector('td:first-child').innerText.toLowerCase();
+        if (nombre.includes(filtro)) {
+            fila.style.display = '';
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+}
+
 function modificarProducto(index) {
     const producto = productos[index];
     const nuevoNombre = prompt("Nuevo nombre:", producto.nombre);
@@ -130,7 +165,7 @@ function reiniciarCalculadora() {
 }
 
 function generarPDF() {
-    window.jsPDF = window.jspdf.jsPDF; // Inicializar jsPDF
+    window.jsPDF = window.jspdf.jsPDF;
     const doc = new jsPDF();
 
     doc.setFontSize(16);
@@ -156,5 +191,4 @@ function generarPDF() {
     doc.save('lista_productos.pdf');
 }
 
-// Cargar productos al inicio
 actualizarLista();
