@@ -14,7 +14,7 @@ body {
     border-radius: 10px;
     background-color: #fff;
     width: 100%;
-    max-width: 300px;
+    max-width: 400px; /* Aumentado el ancho máximo */
     margin-bottom: 20px;
     text-align: center;
 }
@@ -49,34 +49,57 @@ p {
     color: #333;
 }
 
-.menu {
-    display: flex;
-    justify-content: center;
+#listaProductos table {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
 }
 
-.menu button {
-    width: auto;
-    margin: 0 10px;
+#listaProductos th, #listaProductos td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
 }
 
-.product-list {
-    max-width: 300px;
-    width: 100%;
-    margin: 20px 0;
+#listaProductos th {
+    background-color: #f2f2f2;
 }
 
-.product-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.product-item button {
+#listaProductos button {
     background-color: red;
     color: white;
     border: none;
     border-radius: 5px;
-    padding: 5px;
+    padding: 5px 10px; /* Ajustado el padding */
+    margin: 0 5px; /* Añadido margen */
+    cursor: pointer;
+}
+
+#listaProductos button:hover {
+    background-color: darkred;
+}
+
+#listaProductos button.editar { /* Estilo para botones de editar */
+    background-color: #4CAF50; /* Verde */
+}
+
+#listaProductos button.editar:hover {
+    background-color: #45a049;
+}
+
+#listaProductos button.eliminar { /* Estilo para botones de eliminar */
+    background-color: #f44336; /* Rojo */
+}
+
+#listaProductos button.eliminar:hover {
+    background-color: #d32f2f;
+}
+
+#listaProductos button.limpiar { /* Estilo para botones de limpiar */
+    background-color: #008CBA; /* Azul */
+    margin-top: 10px;
+}
+
+#listaProductos button.limpiar:hover {
+    background-color: #007bb5;
 }
