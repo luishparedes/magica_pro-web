@@ -149,9 +149,11 @@ function eliminarProducto(index) {
 }
 
 function limpiarLista() {
-    productos = [];
-    localStorage.removeItem('productos');
-    actualizarLista();
+    if (confirm("¿Estás seguro de que deseas limpiar la lista? Esta acción no se puede deshacer.")) {
+        productos = [];
+        localStorage.removeItem('productos');
+        actualizarLista();
+    }
 }
 
 function reiniciarCalculadora() {
