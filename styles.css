@@ -103,12 +103,23 @@ p {
     background-color: #d32f2f;
 }
 
-#listaProductos button.limpiar {
+/* Botón Limpiar Lista */
+#listaProductos button.limpiar-lista {
+    background-color: #f44336;
+    margin-top: 10px;
+}
+
+#listaProductos button.limpiar-lista:hover {
+    background-color: #d32f2f;
+}
+
+/* Botón Generar PDF */
+#listaProductos button.generar-pdf {
     background-color: #008CBA;
     margin-top: 10px;
 }
 
-#listaProductos button.limpiar:hover {
+#listaProductos button.generar-pdf:hover {
     background-color: #007bb5;
 }
 
