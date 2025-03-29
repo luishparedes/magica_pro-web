@@ -1,59 +1,206 @@
+// Datos persistentes
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
+let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
+let tasaBCVGuardada = parseFloat(localStorage.getItem('tasaBCV')) || 0;
+
+// Cargar datos al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarDatosIniciales();
+    actualizarLista();
+});
+
+function cargarDatosIniciales() {
+    document.getElementById('nombreEstablecimiento').value = nombreEstablecimiento;
+    document.getElementById('tasaBCV').value = tasaBCVGuardada || '';
+}
+
+// ================= FUNCIONES PRINCIPALES =================
 
 function calcularPrecioVenta() {
-    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
+    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value) || tasaBCVGuardada;
     const costo = parseFloat(document.getElementById('costo').value);
-    const ganancia = parseFloat(document.getElementById('ganancia').value) / 100;
+    const ganancia = parseFloat(document.getElementById('ganancia').value);
     const unidades = parseFloat(document.getElementById('unidades').value);
 
-    if (isNaN(tasaBCV) || isNaN(costo) || isNaN(ganancia) || isNaN(unidades)) {
-        alert("Por favor, complete todos los campos correctamente.");
-        return;
-    }
+    // Validaciones
+    if (!validarTasaBCV(tasaBCV)) return;
+    if (!validarCamposNumericos(costo, ganancia, unidades)) return;
 
-    const precioDolar = costo / (1 - ganancia);
+    // Cálculos
+    const gananciaDecimal = ganancia / 100;
+    const precioDolar = costo / (1 - gananciaDecimal);
     const precioBolivares = precioDolar * tasaBCV;
     const precioUnitarioDolar = precioDolar / unidades;
     const precioUnitarioBolivar = precioBolivares / unidades;
 
-    document.getElementById('resultadoPrecioVenta').innerText = `Precio al mayor: $${precioDolar.toFixed(2)} / Bs${precioBolivares.toFixed(2)}`;
-    document.getElementById('precioUnitario').innerText = `Precio unitario: $${precioUnitarioDolar.toFixed(2)} / Bs${precioUnitarioBolivar.toFixed(2)}`;
+    // Mostrar resultados
+    mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, precioUnitarioBolivar);
 }
 
 function guardarProducto() {
-    const nombre = document.getElementById('producto').value;
+    const nombre = document.getElementById('producto').value.trim();
     const descripcion = document.getElementById('descripcion').value;
     const costo = parseFloat(document.getElementById('costo').value);
-    const ganancia = parseFloat(document.getElementById('ganancia').value) / 100;
+    const ganancia = parseFloat(document.getElementById('ganancia').value);
     const unidades = parseFloat(document.getElementById('unidades').value);
-    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
+    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value) || tasaBCVGuardada;
 
-    if (!nombre || !descripcion || isNaN(costo) || isNaN(ganancia) || isNaN(unidades) || isNaN(tasaBCV)) {
-        alert("Por favor, complete todos los campos correctamente.");
+    // Validaciones
+    if (!validarCamposTexto(nombre, descripcion)) return;
+    if (!validarTasaBCV(tasaBCV)) return;
+    if (!validarCamposNumericos(costo, ganancia, unidades)) return;
+
+    // Cálculos y guardado
+    const producto = calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV);
+    guardarProductoEnLista(producto);
+}
+
+// ================= FUNCIONES DE GESTIÓN =================
+
+function actualizarTasaBCV() {
+    const nuevaTasa = parseFloat(document.getElementById('tasaBCV').value);
+    
+    if (!validarTasaBCV(nuevaTasa)) return;
+
+    tasaBCVGuardada = nuevaTasa;
+    localStorage.setItem('tasaBCV', tasaBCVGuardada);
+
+    actualizarPreciosConNuevaTasa(nuevaTasa);
+    actualizarLista();
+    alert(`✅ Tasa BCV actualizada a: ${tasaBCVGuardada}\nTodos los precios en Bs han sido recalculados.`);
+}
+
+function guardarNombreEstablecimiento() {
+    nombreEstablecimiento = document.getElementById('nombreEstablecimiento').value.trim();
+    if (!nombreEstablecimiento) {
+        alert("⚠️ Ingrese un nombre válido");
         return;
     }
+    localStorage.setItem('nombreEstablecimiento', nombreEstablecimiento);
+    alert(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
+}
 
-    const precioDolar = costo / (1 - ganancia);
+// ================= FUNCIONES DE IMPRESIÓN =================
+
+function imprimirTicket(index) {
+    const producto = productos[index];
+    const ventana = window.open('', '_blank', 'width=80mm,height=150px');
+    
+    ventana.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Ticket</title>
+            <meta charset="UTF-8">
+            <style>
+                @page { size: 80mm auto; margin: 0; }
+                body {
+                    font-family: Arial, sans-serif;
+                    width: 80mm;
+                    margin: 0;
+                    padding: 2mm;
+                    font-size: 14px;
+                    line-height: 1.3;
+                }
+                .header {
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 3mm;
+                }
+                .price {
+                    text-align: center;
+                    font-size: 22px;
+                    margin: 4mm 0;
+                }
+                .divider {
+                    border-top: 1px dashed #000;
+                    margin: 3mm auto;
+                    width: 70%;
+                }
+                .footer {
+                    text-align: center;
+                    font-style: italic;
+                    margin-top: 3mm;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">${nombreEstablecimiento || 'Mi Negocio'}</div>
+            <div class="price">Bs ${producto.precioUnitarioBolivar.toFixed(2).replace('.', ',')}</div>
+            <div class="divider"></div>
+            <div class="price">Bs ${producto.precioMayorBolivar.toFixed(2).replace('.', ',')}</div>
+            <div class="footer">¡Gracias por su compra!</div>
+            <script>
+                setTimeout(function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 100);
+                }, 50);
+            </script>
+        </body>
+        </html>
+    `);
+    ventana.document.close();
+}
+
+// ================= FUNCIONES AUXILIARES =================
+
+function validarTasaBCV(tasa) {
+    if (isNaN(tasa) || tasa <= 0) {
+        alert("⚠️ Ingrese una tasa BCV válida (mayor a cero)");
+        return false;
+    }
+    return true;
+}
+
+function validarCamposNumericos(costo, ganancia, unidades) {
+    if (isNaN(costo) || costo <= 0 || isNaN(ganancia) || ganancia <= 0 || isNaN(unidades) || unidades <= 0) {
+        alert("⚠️ Complete todos los campos con valores válidos (mayores a cero)");
+        return false;
+    }
+    return true;
+}
+
+function validarCamposTexto(nombre, descripcion) {
+    if (!nombre || !descripcion) {
+        alert("⚠️ Complete todos los campos");
+        return false;
+    }
+    return true;
+}
+
+function calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV) {
+    const gananciaDecimal = ganancia / 100;
+    const precioDolar = costo / (1 - gananciaDecimal);
     const precioBolivares = precioDolar * tasaBCV;
-    const precioUnitarioDolar = precioDolar / unidades;
-    const precioUnitarioBolivar = precioBolivares / unidades;
 
-    const producto = {
+    return {
         nombre,
         descripcion,
         costo,
-        ganancia,
+        ganancia: gananciaDecimal,
         unidades,
         precioMayorDolar: precioDolar,
         precioMayorBolivar: precioBolivares,
-        precioUnitarioDolar: precioUnitarioDolar,
-        precioUnitarioBolivar: precioUnitarioBolivar,
+        precioUnitarioDolar: precioDolar / unidades,
+        precioUnitarioBolivar: precioBolivares / unidades
     };
+}
 
+function guardarProductoEnLista(producto) {
     productos.push(producto);
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
     reiniciarCalculadora();
+    alert("✅ Producto guardado exitosamente");
+}
+
+function actualizarPreciosConNuevaTasa(nuevaTasa) {
+    productos.forEach(producto => {
+        producto.precioMayorBolivar = producto.precioMayorDolar * nuevaTasa;
+        producto.precioUnitarioBolivar = producto.precioUnitarioDolar * nuevaTasa;
+    });
+    localStorage.setItem('productos', JSON.stringify(productos));
 }
 
 function actualizarLista() {
@@ -70,7 +217,8 @@ function actualizarLista() {
             <td>$${producto.precioUnitarioDolar.toFixed(2)}</td>
             <td>Bs${producto.precioUnitarioBolivar.toFixed(2)}</td>
             <td>
-                <button class="editar" onclick="modificarProducto(${index})">Editar</button>
+                <button class="editar" onclick="editarProducto(${index})">Editar</button>
+                <button class="imprimir" onclick="imprimirTicket(${index})">Imprimir</button>
                 <button class="eliminar" onclick="eliminarProducto(${index})">Eliminar</button>
             </td>
         `;
@@ -78,80 +226,32 @@ function actualizarLista() {
     });
 }
 
-function actualizarTasaBCV() {
-    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
-
-    if (isNaN(tasaBCV)) {
-        alert("Por favor, ingrese una tasa BCV válida.");
-        return;
-    }
-
-    productos.forEach(producto => {
-        const precioDolar = producto.costo / (1 - producto.ganancia);
-        const precioBolivares = precioDolar * tasaBCV;
-
-        producto.precioMayorBolivar = precioBolivares;
-        producto.precioUnitarioBolivar = precioBolivares / producto.unidades;
-    });
-
-    localStorage.setItem('productos', JSON.stringify(productos));
-    actualizarLista();
-}
-
-function buscarProducto() {
-    const filtro = document.getElementById('buscar').value.toLowerCase();
-    const tbody = document.querySelector('#listaProductos tbody');
-    const filas = tbody.querySelectorAll('tr');
-
-    filas.forEach(fila => {
-        const nombre = fila.querySelector('td:first-child').innerText.toLowerCase();
-        if (nombre.includes(filtro)) {
-            fila.style.display = '';
-        } else {
-            fila.style.display = 'none';
-        }
-    });
-}
-
-function modificarProducto(index) {
+function editarProducto(index) {
     const producto = productos[index];
-    const nuevoNombre = prompt("Nuevo nombre:", producto.nombre);
-    const nuevaDescripcion = prompt("Nueva descripción:", producto.descripcion);
-    const nuevoCosto = parseFloat(prompt("Nuevo costo:", producto.costo));
-    const nuevaGanancia = parseFloat(prompt("Nueva ganancia (%):", producto.ganancia * 100));
-    const nuevasUnidades = parseFloat(prompt("Nuevas unidades:", producto.unidades));
+    const nuevoNombre = prompt("Nombre:", producto.nombre);
+    const nuevaDescripcion = prompt("Descripción:", producto.descripcion);
+    const nuevoCosto = parseFloat(prompt("Costo ($):", producto.costo));
+    const nuevaGanancia = parseFloat(prompt("Ganancia (%):", producto.ganancia * 100));
+    const nuevasUnidades = parseFloat(prompt("Unidades:", producto.unidades));
 
     if (nuevoNombre && nuevaDescripcion && !isNaN(nuevoCosto) && !isNaN(nuevaGanancia) && !isNaN(nuevasUnidades)) {
-        producto.nombre = nuevoNombre;
-        producto.descripcion = nuevaDescripcion;
-        producto.costo = nuevoCosto;
-        producto.ganancia = nuevaGanancia / 100;
-        producto.unidades = nuevasUnidades;
-
-        const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
-        const precioDolar = producto.costo / (1 - producto.ganancia);
-        const precioBolivares = precioDolar * tasaBCV;
-
-        producto.precioMayorDolar = precioDolar;
-        producto.precioMayorBolivar = precioBolivares;
-        producto.precioUnitarioDolar = precioDolar / producto.unidades;
-        producto.precioUnitarioBolivar = precioBolivares / producto.unidades;
-
+        productos[index] = calcularProducto(
+            nuevoNombre,
+            nuevaDescripcion,
+            nuevoCosto,
+            nuevaGanancia,
+            nuevasUnidades,
+            tasaBCVGuardada
+        );
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
     }
 }
 
 function eliminarProducto(index) {
-    productos.splice(index, 1);
-    localStorage.setItem('productos', JSON.stringify(productos));
-    actualizarLista();
-}
-
-function limpiarLista() {
-    if (confirm("¿Estás seguro de que deseas limpiar la lista? Esta acción no se puede deshacer.")) {
-        productos = [];
-        localStorage.removeItem('productos');
+    if (confirm(`¿Eliminar "${productos[index].nombre}"?`)) {
+        productos.splice(index, 1);
+        localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
     }
 }
@@ -161,36 +261,56 @@ function reiniciarCalculadora() {
     document.getElementById('costo').value = '';
     document.getElementById('ganancia').value = '';
     document.getElementById('unidades').value = '';
-    document.getElementById('descripcion').value = '';
-    document.getElementById('resultadoPrecioVenta').innerText = 'Precio al mayor: ';
-    document.getElementById('precioUnitario').innerText = 'Precio unitario: ';
+    document.getElementById('descripcion').selectedIndex = 0;
+}
+
+function buscarProducto() {
+    const filtro = document.getElementById('buscar').value.toLowerCase();
+    const filas = document.querySelectorAll('#listaProductos tbody tr');
+
+    filas.forEach(fila => {
+        const textoFila = fila.textContent.toLowerCase();
+        fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+    });
+}
+
+function limpiarLista() {
+    if (confirm("¿Borrar TODOS los productos?")) {
+        productos = [];
+        localStorage.removeItem('productos');
+        actualizarLista();
+    }
 }
 
 function generarPDF() {
-    window.jsPDF = window.jspdf.jsPDF;
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
+    
     doc.setFontSize(16);
-    doc.text("Lista de Productos", 105, 15, { align: "center" });
-
-    doc.setFontSize(12);
+    doc.text(`Lista de Productos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
     let y = 30;
-    const tasaBCV = parseFloat(document.getElementById('tasaBCV').value);
-
+    
     productos.forEach(producto => {
-        doc.text(`Producto: ${producto.nombre}`, 10, y);
-        doc.text(`Descripción: ${producto.descripcion}`, 10, y + 5);
-        doc.text(`Precio Mayor: $${producto.precioMayorDolar.toFixed(2)} / Bs${producto.precioMayorBolivar.toFixed(2)}`, 10, y + 10);
-        doc.text(`Precio Unitario: $${producto.precioUnitarioDolar.toFixed(2)} / Bs${producto.precioUnitarioBolivar.toFixed(2)}`, 10, y + 15);
-        y += 25;
-
-        if (y > 250) {
+        doc.text(`• ${producto.nombre} (${producto.descripcion})`, 10, y);
+        doc.text(`Mayor: $${producto.precioMayorDolar.toFixed(2)} | Bs${producto.precioMayorBolivar.toFixed(2)}`, 10, y + 5);
+        doc.text(`Unitario: $${producto.precioUnitarioDolar.toFixed(2)} | Bs${producto.precioUnitarioBolivar.toFixed(2)}`, 10, y + 10);
+        y += 15;
+        
+        if (y > 280) {
             doc.addPage();
-            y = 30;
+            y = 20;
         }
     });
-
+    
     doc.save('lista_productos.pdf');
 }
 
-actualizarLista();
+// Funciones de visualización
+function mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, precioUnitarioBolivar) {
+    document.getElementById('resultadoPrecioVenta').innerHTML = 
+        `<strong>Precio al mayor:</strong> $${precioDolar.toFixed(2)} / Bs${precioBolivares.toFixed(2)}`;
+    document.getElementById('precioUnitario').innerHTML = 
+        `<strong>Precio unitario:</strong> $${precioUnitarioDolar.toFixed(2)} / Bs${precioUnitarioBolivar.toFixed(2)}`;
+}
