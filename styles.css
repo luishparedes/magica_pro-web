@@ -9,7 +9,6 @@ body {
     padding: 20px;
 }
 
-/* Estilos para la calculadora */
 .calculator {
     border: 2px solid #ccc;
     padding: 20px;
@@ -21,12 +20,10 @@ body {
     text-align: center;
 }
 
-/* Estilos para los encabezados */
 h2, h3 {
     margin-bottom: 10px;
 }
 
-/* Estilos para los campos de entrada y botones */
 input[type="number"], input[type="text"], select, button {
     margin: 10px 0;
     padding: 10px;
@@ -54,7 +51,6 @@ p {
     color: #333;
 }
 
-/* Estilos para la tabla de productos */
 #listaProductos table {
     width: 100%;
     border-collapse: collapse;
@@ -71,7 +67,6 @@ p {
     background-color: #f2f2f2;
 }
 
-/* Estilos para los botones de la lista de productos */
 #listaProductos button {
     background-color: #f44336;
     color: white;
@@ -103,7 +98,14 @@ p {
     background-color: #d32f2f;
 }
 
-/* Botón Limpiar Lista */
+#listaProductos button.imprimir {
+    background-color: #FF9800;
+}
+
+#listaProductos button.imprimir:hover {
+    background-color: #F57C00;
+}
+
 #listaProductos button.limpiar-lista {
     background-color: #f44336;
     margin-top: 10px;
@@ -113,7 +115,6 @@ p {
     background-color: #d32f2f;
 }
 
-/* Botón Generar PDF */
 #listaProductos button.generar-pdf {
     background-color: #008CBA;
     margin-top: 10px;
@@ -123,24 +124,19 @@ p {
     background-color: #007bb5;
 }
 
-/* Estilos responsivos */
 @media (max-width: 768px) {
     .calculator {
         max-width: 100%;
     }
-
     input[type="number"], input[type="text"], select, button {
         width: 100%;
     }
-
     #listaProductos table {
         font-size: 14px;
     }
-
     #listaProductos th, #listaProductos td {
         padding: 6px;
     }
-
     #listaProductos button {
         padding: 4px 8px;
     }
