@@ -80,7 +80,7 @@ function guardarNombreEstablecimiento() {
     alert(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
 }
 
-// ================= FUNCIONES DE IMPRESIÓN =================
+// ================= FUNCIONES DE IMPRESIÓN (MODIFICADA) =================
 
 function imprimirTicket(index) {
     const producto = productos[index];
@@ -111,7 +111,8 @@ function imprimirTicket(index) {
                 .price {
                     text-align: center;
                     font-size: 22px;
-                    margin: 4mm 0;
+                    font-weight: bold;
+                    margin: 10mm 0;
                 }
                 .divider {
                     border-top: 1px dashed #000;
@@ -128,8 +129,6 @@ function imprimirTicket(index) {
         <body>
             <div class="header">${nombreEstablecimiento || 'Mi Negocio'}</div>
             <div class="price">Bs ${producto.precioUnitarioBolivar.toFixed(2).replace('.', ',')}</div>
-            <div class="divider"></div>
-            <div class="price">Bs ${producto.precioMayorBolivar.toFixed(2).replace('.', ',')}</div>
             <div class="footer">¡Gracias por su compra!</div>
             <script>
                 setTimeout(function() {
