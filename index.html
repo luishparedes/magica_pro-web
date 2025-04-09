@@ -38,6 +38,9 @@
                 <option value="Frigorifico">Frigorífico</option>
                 <option value="Pescaderia">Pescadería</option>
                 <option value="Repuesto">Repuesto</option>
+                <option value="Confiteria">Confitería</option>
+                <option value="Ropa">Ropa</option>
+                <option value="Calzados">Calzados</option>
                 <option value="Otros">Otros</option>
             </select>
         </section>
@@ -70,6 +73,11 @@
             </tbody>
         </table>
         <button onclick="generarPDF()" class="generar-pdf">Generar PDF</button>
+        <button onclick="mostrarListaCostos()" class="lista-costos">Mostrar Lista de Costos</button>
+        <div id="listaCostosContainer" style="display: none; margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 5px;">
+            <h3>Lista de Costos de Productos</h3>
+            <ul id="listaCostos"></ul>
+        </div>
         <button onclick="limpiarLista()" class="limpiar-lista">Limpiar Lista</button>
     </div>
     <script src="script.js"></script>
