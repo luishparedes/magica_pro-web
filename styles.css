@@ -124,6 +124,31 @@ p {
     background-color: #007bb5;
 }
 
+#listaProductos button.lista-costos {
+    background-color: #9c27b0;
+    margin-top: 10px;
+}
+
+#listaProductos button.lista-costos:hover {
+    background-color: #7b1fa2;
+}
+
+#listaCostosContainer {
+    width: 100%;
+}
+
+#listaCostos {
+    list-style-type: none;
+    padding: 0;
+}
+
+#listaCostos li {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+}
+
 @media (max-width: 768px) {
     .calculator {
         max-width: 100%;
