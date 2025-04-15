@@ -2,6 +2,7 @@
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
 let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
 let tasaBCVGuardada = parseFloat(localStorage.getItem('tasaBCV')) || 0;
+let historialTasas = JSON.parse(localStorage.getItem('historialTasas')) || [];
 
 // Cargar datos al iniciar la página
 document.addEventListener('DOMContentLoaded', function() {
@@ -9,13 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarLista();
 });
 
+// ================= FUNCIONES PRINCIPALES =================
+
 // Carga los datos guardados en los campos del formulario
 function cargarDatosIniciales() {
     document.getElementById('nombreEstablecimiento').value = nombreEstablecimiento;
     document.getElementById('tasaBCV').value = tasaBCVGuardada || '';
 }
-
-// ================= FUNCIONES PRINCIPALES =================
 
 // Calcula el precio de venta basado en los datos ingresados
 function calcularPrecioVenta() {
@@ -28,7 +29,7 @@ function calcularPrecioVenta() {
     if (!validarTasaBCV(tasaBCV)) return;
     if (!validarCamposNumericos(costo, ganancia, unidades)) return;
 
-    // Cálculos matemáticos
+    // Cálculos matemáticos (ORIGINALES)
     const gananciaDecimal = ganancia / 100;
     const precioDolar = costo / (1 - gananciaDecimal);
     const precioBolivares = precioDolar * tasaBCV;
@@ -52,6 +53,11 @@ function guardarProducto() {
     if (!validarCamposTexto(nombre, descripcion)) return;
     if (!validarTasaBCV(tasaBCV)) return;
     if (!validarCamposNumericos(costo, ganancia, unidades)) return;
+    
+    // Verificar si el producto ya existe (NUEVA FUNCIONALIDAD)
+    if (productoExiste(nombre)) {
+        if (!confirm(`⚠️ "${nombre}" ya existe. ¿Deseas guardarlo de todos modos?`)) return;
+    }
 
     // Crea el producto y lo guarda
     const producto = calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV);
@@ -60,63 +66,75 @@ function guardarProducto() {
 
 // ================= FUNCIONES DE GESTIÓN =================
 
-// Actualiza la tasa BCV y recalcula todos los precios
+// Actualiza la tasa BCV sin recalcular precios (MODIFICADA)
 function actualizarTasaBCV() {
     const nuevaTasa = parseFloat(document.getElementById('tasaBCV').value);
     
     if (!validarTasaBCV(nuevaTasa)) return;
 
+    // Notificar cambio sin recalcular (NUEVO)
+    if (tasaBCVGuardada !== nuevaTasa) {
+        mostrarToast(`Tasa BCV actualizada: ${nuevaTasa} (Precios no recalculados)`, 'warning');
+    }
+
     tasaBCVGuardada = nuevaTasa;
     localStorage.setItem('tasaBCV', tasaBCVGuardada);
-
-    actualizarPreciosConNuevaTasa(nuevaTasa);
-    actualizarLista();
-    alert(`✅ Tasa BCV actualizada a: ${tasaBCVGuardada}\nTodos los precios en Bs han sido recalculados.`);
+    guardarTasaEnHistorial(nuevaTasa); // (NUEVA FUNCIÓN)
 }
 
 // Guarda el nombre del establecimiento
 function guardarNombreEstablecimiento() {
     nombreEstablecimiento = document.getElementById('nombreEstablecimiento').value.trim();
     if (!nombreEstablecimiento) {
-        alert("⚠️ Ingrese un nombre válido");
+        mostrarToast("Ingrese un nombre válido", "error");
         return;
     }
     localStorage.setItem('nombreEstablecimiento', nombreEstablecimiento);
-    alert(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
+    mostrarToast(`Nombre guardado: "${nombreEstablecimiento}"`);
 }
 
-// ================= NUEVA FUNCIÓN =================
-// Muestra/oculta la lista de costos de productos
-function mostrarListaCostos() {
-    const container = document.getElementById('listaCostosContainer');
-    const lista = document.getElementById('listaCostos');
+// ================= NUEVAS FUNCIONALIDADES =================
+
+// Función para cerrar sesión (NUEVA)
+function cerrarSesion() {
+    let mensaje = "⚠️ Antes de cerrar:\n\n1. Recomendamos GENERAR UN PDF de respaldo.\n";
     
-    // Alternar entre mostrar y ocultar
-    if (container.style.display === 'none') {
-        // Generar la lista de costos
-        lista.innerHTML = '';
-        
-        if (productos.length === 0) {
-            lista.innerHTML = '<li>No hay productos registrados</li>';
-        } else {
-            // Ordenar productos alfabéticamente
-            const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
-            
-            // Agregar cada producto a la lista
-            productosOrdenados.forEach(producto => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span><strong>${producto.nombre}</strong> (${producto.descripcion})</span>
-                    <span>$${producto.costo.toFixed(2)} | Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}</span>
-                `;
-                lista.appendChild(li);
-            });
-        }
-        
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
+    if (esDispositivoMovil()) {
+        mensaje += "\n📱 Advertencia para móviles:\n- Generar PDF puede fallar en teléfonos.\n- Use una computadora para respaldos seguros.\n";
     }
+
+    if (confirm(mensaje)) {
+        mostrarToast("Sesión cerrada. Tus datos están seguros.");
+    }
+}
+
+// Guarda histórico de tasas (últimas 6) - NUEVA
+function guardarTasaEnHistorial(tasa) {
+    historialTasas.unshift({
+        fecha: new Date().toLocaleString(),
+        tasa: tasa
+    });
+    historialTasas = historialTasas.slice(0, 6); // Mantener solo 6 registros
+    localStorage.setItem('historialTasas', JSON.stringify(historialTasas));
+}
+
+// Detecta si es móvil - NUEVA
+function esDispositivoMovil() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Notificaciones estilo Toast - NUEVA
+function mostrarToast(mensaje, tipo = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    toast.textContent = mensaje;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Verifica si producto existe - NUEVA
+function productoExiste(nombre) {
+    return productos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 }
 
 // ================= FUNCIONES DE VALIDACIÓN =================
@@ -124,7 +142,7 @@ function mostrarListaCostos() {
 // Valida que la tasa BCV sea correcta
 function validarTasaBCV(tasa) {
     if (isNaN(tasa) || tasa <= 0) {
-        alert("⚠️ Ingrese una tasa BCV válida (mayor a cero)");
+        mostrarToast("Ingrese una tasa BCV válida (mayor a cero)", "error");
         return false;
     }
     return true;
@@ -133,7 +151,7 @@ function validarTasaBCV(tasa) {
 // Valida que los campos numéricos sean correctos
 function validarCamposNumericos(costo, ganancia, unidades) {
     if (isNaN(costo) || costo <= 0 || isNaN(ganancia) || ganancia <= 0 || isNaN(unidades) || unidades <= 0) {
-        alert("⚠️ Complete todos los campos con valores válidos (mayores a cero)");
+        mostrarToast("Complete todos los campos con valores válidos (mayores a cero)", "error");
         return false;
     }
     return true;
@@ -142,7 +160,7 @@ function validarCamposNumericos(costo, ganancia, unidades) {
 // Valida que los campos de texto no estén vacíos
 function validarCamposTexto(nombre, descripcion) {
     if (!nombre || !descripcion) {
-        alert("⚠️ Complete todos los campos");
+        mostrarToast("Complete todos los campos", "error");
         return false;
     }
     return true;
@@ -175,16 +193,7 @@ function guardarProductoEnLista(producto) {
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
     reiniciarCalculadora();
-    alert("✅ Producto guardado exitosamente");
-}
-
-// Actualiza todos los precios cuando cambia la tasa BCV
-function actualizarPreciosConNuevaTasa(nuevaTasa) {
-    productos.forEach(producto => {
-        producto.precioMayorBolivar = producto.precioMayorDolar * nuevaTasa;
-        producto.precioUnitarioBolivar = producto.precioUnitarioDolar * nuevaTasa;
-    });
-    localStorage.setItem('productos', JSON.stringify(productos));
+    mostrarToast("Producto guardado exitosamente");
 }
 
 // ================= FUNCIONES DE INTERFAZ =================
@@ -230,7 +239,33 @@ function reiniciarCalculadora() {
     document.getElementById('descripcion').selectedIndex = 0;
 }
 
-// ================= FUNCIONES DE BÚSQUEDA Y GESTIÓN =================
+// ================= FUNCIONES ADICIONALES =================
+
+// Muestra/oculta la lista de costos de productos
+function mostrarListaCostos() {
+    const container = document.getElementById('listaCostosContainer');
+    const lista = document.getElementById('listaCostos');
+    
+    if (container.style.display === 'none') {
+        lista.innerHTML = '';
+        
+        if (productos.length === 0) {
+            lista.innerHTML = '<li>No hay productos registrados</li>';
+        } else {
+            productos.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach(producto => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span><strong>${producto.nombre}</strong> (${producto.descripcion})</span>
+                    <span>$${producto.costo.toFixed(2)} | Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}</span>
+                `;
+                lista.appendChild(li);
+            });
+        }
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
 
 // Busca productos en la lista
 function buscarProducto() {
@@ -263,6 +298,7 @@ function editarProducto(index) {
         );
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
+        mostrarToast("Producto actualizado");
     }
 }
 
@@ -272,6 +308,7 @@ function eliminarProducto(index) {
         productos.splice(index, 1);
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
+        mostrarToast("Producto eliminado");
     }
 }
 
@@ -281,6 +318,7 @@ function limpiarLista() {
         productos = [];
         localStorage.removeItem('productos');
         actualizarLista();
+        mostrarToast("Lista de productos limpiada");
     }
 }
 
@@ -310,6 +348,7 @@ function generarPDF() {
     });
     
     doc.save('lista_productos.pdf');
+    mostrarToast("PDF generado con éxito");
 }
 
 // Imprime un ticket para un producto
