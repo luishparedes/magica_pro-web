@@ -47,7 +47,7 @@
         <section>
             <h3>Precio de Venta</h3>
             <input type="number" id="ganancia" placeholder="Porcentaje de ganancia" required>
-            <input type="number" id="unidades" placeholder="Cantidad de unidades" required>
+            <input type="number" id="unidades" placeholder="Unidades que trae la caja" required>
             <button onclick="calcularPrecioVenta()">Calcular Precio de Venta</button>
             <p id="resultadoPrecioVenta">Precio al mayor: </p>
             <p id="precioUnitario">Precio unitario: </p>
@@ -69,12 +69,12 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-            </tbody>
+            <tbody></tbody>
         </table>
         <button onclick="generarPDF()" class="generar-pdf">Generar PDF</button>
         <button onclick="mostrarListaCostos()" class="lista-costos">Mostrar Lista de Costos</button>
-        <div id="listaCostosContainer" style="display: none; margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 5px;">
+        <button onclick="cerrarSesion()" class="btn-cerrar-sesion">🚪 Cerrar Sesión</button>
+        <div id="listaCostosContainer" style="display: none;">
             <h3>Lista de Costos de Productos</h3>
             <ul id="listaCostos"></ul>
         </div>
