@@ -11,35 +11,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ================= FUNCIONES PRINCIPALES =================
 
-// Carga los datos guardados en los campos del formulario
 function cargarDatosIniciales() {
     document.getElementById('nombreEstablecimiento').value = nombreEstablecimiento;
     document.getElementById('tasaBCV').value = tasaBCVGuardada || '';
 }
 
-// Calcula el precio de venta basado en los datos ingresados
 function calcularPrecioVenta() {
     const tasaBCV = parseFloat(document.getElementById('tasaBCV').value) || tasaBCVGuardada;
     const costo = parseFloat(document.getElementById('costo').value);
     const ganancia = parseFloat(document.getElementById('ganancia').value);
     const unidades = parseFloat(document.getElementById('unidades').value);
 
-    // Validaciones
     if (!validarTasaBCV(tasaBCV)) return;
     if (!validarCamposNumericos(costo, ganancia, unidades)) return;
 
-    // Cálculos matemáticos
     const gananciaDecimal = ganancia / 100;
     const precioDolar = costo / (1 - gananciaDecimal);
     const precioBolivares = precioDolar * tasaBCV;
     const precioUnitarioDolar = precioDolar / unidades;
     const precioUnitarioBolivar = precioBolivares / unidades;
 
-    // Mostrar resultados
     mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, precioUnitarioBolivar);
 }
 
-// Guarda un nuevo producto en la lista
 function guardarProducto() {
     const nombre = document.getElementById('producto').value.trim();
     const descripcion = document.getElementById('descripcion').value;
@@ -48,33 +42,27 @@ function guardarProducto() {
     const unidades = parseFloat(document.getElementById('unidades').value);
     const tasaBCV = parseFloat(document.getElementById('tasaBCV').value) || tasaBCVGuardada;
 
-    // Validaciones
     if (!validarCamposTexto(nombre, descripcion)) return;
     if (!validarTasaBCV(tasaBCV)) return;
     if (!validarCamposNumericos(costo, ganancia, unidades)) return;
 
-    // Verificar si el producto ya existe
     if (productoExiste(nombre)) {
         if (!confirm(`⚠️ "${nombre}" ya existe. ¿Deseas guardarlo de todos modos?`)) return;
     }
 
-    // Crea el producto y lo guarda
     const producto = calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV);
     guardarProductoEnLista(producto);
 }
 
 // ================= FUNCIONES DE GESTIÓN =================
 
-// Actualiza la tasa BCV y recalcula todos los precios (FUNCIÓN CORREGIDA)
 function actualizarTasaBCV() {
     const nuevaTasa = parseFloat(document.getElementById('tasaBCV').value);
     
     if (!validarTasaBCV(nuevaTasa)) return;
 
-    // Guardar historial de tasas
     guardarTasaEnHistorial(nuevaTasa);
 
-    // Actualizar tasa y recalcular
     tasaBCVGuardada = nuevaTasa;
     localStorage.setItem('tasaBCV', tasaBCVGuardada);
     
@@ -87,7 +75,6 @@ function actualizarTasaBCV() {
     }
 }
 
-// Función clave que faltaba: Actualiza precios con nueva tasa
 function actualizarPreciosConNuevaTasa(nuevaTasa) {
     productos.forEach(producto => {
         producto.precioMayorBolivar = producto.precioMayorDolar * nuevaTasa;
@@ -96,7 +83,6 @@ function actualizarPreciosConNuevaTasa(nuevaTasa) {
     localStorage.setItem('productos', JSON.stringify(productos));
 }
 
-// Guarda el nombre del establecimiento
 function guardarNombreEstablecimiento() {
     nombreEstablecimiento = document.getElementById('nombreEstablecimiento').value.trim();
     if (!nombreEstablecimiento) {
@@ -109,7 +95,6 @@ function guardarNombreEstablecimiento() {
 
 // ================= FUNCIONES ADICIONALES =================
 
-// Muestra/oculta la lista de costos de productos
 function mostrarListaCostos() {
     const container = document.getElementById('listaCostosContainer');
     const lista = document.getElementById('listaCostos');
@@ -120,10 +105,8 @@ function mostrarListaCostos() {
         if (productos.length === 0) {
             lista.innerHTML = '<li>No hay productos registrados</li>';
         } else {
-            // Ordenar productos alfabéticamente
             const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
             
-            // Agregar cada producto a la lista
             productosOrdenados.forEach(producto => {
                 const li = document.createElement('li');
                 li.innerHTML = `
@@ -140,7 +123,44 @@ function mostrarListaCostos() {
     }
 }
 
-// Guarda histórico de tasas (últimas 6)
+function generarPDFCostos() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(16);
+    doc.text(`Lista de Costos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(`Tasa BCV: ${tasaBCVGuardada}`, 105, 22, { align: 'center' });
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' });
+    
+    const columns = [
+        { header: 'Producto', dataKey: 'nombre' },
+        { header: 'Descripción', dataKey: 'descripcion' },
+        { header: 'Costo ($)', dataKey: 'costoDolar' },
+        { header: 'Costo (Bs)', dataKey: 'costoBolivar' }
+    ];
+    
+    const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    const rows = productosOrdenados.map(producto => ({
+        nombre: producto.nombre,
+        descripcion: producto.descripcion,
+        costoDolar: `$${producto.costo.toFixed(2)}`,
+        costoBolivar: `Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}`
+    }));
+    
+    doc.autoTable({
+        startY: 35,
+        head: [columns.map(col => col.header)],
+        body: rows.map(row => columns.map(col => row[col.dataKey])),
+        margin: { horizontal: 10 },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+    });
+    
+    doc.save('lista_costos.pdf');
+    mostrarToast("✅ PDF de costos generado con éxito");
+}
+
 function guardarTasaEnHistorial(tasa) {
     let historial = JSON.parse(localStorage.getItem('historialTasas')) || [];
     historial.unshift({
@@ -153,7 +173,6 @@ function guardarTasaEnHistorial(tasa) {
 
 // ================= FUNCIONES DE VALIDACIÓN =================
 
-// Valida que la tasa BCV sea correcta
 function validarTasaBCV(tasa) {
     if (isNaN(tasa) || tasa <= 0) {
         mostrarToast("⚠️ Ingrese una tasa BCV válida (mayor a cero)", "error");
@@ -162,7 +181,6 @@ function validarTasaBCV(tasa) {
     return true;
 }
 
-// Valida que los campos numéricos sean correctos
 function validarCamposNumericos(costo, ganancia, unidades) {
     if (isNaN(costo) || costo <= 0 || isNaN(ganancia) || ganancia <= 0 || isNaN(unidades) || unidades <= 0) {
         mostrarToast("⚠️ Complete todos los campos con valores válidos (mayores a cero)", "error");
@@ -171,7 +189,6 @@ function validarCamposNumericos(costo, ganancia, unidades) {
     return true;
 }
 
-// Valida que los campos de texto no estén vacíos
 function validarCamposTexto(nombre, descripcion) {
     if (!nombre || !descripcion) {
         mostrarToast("⚠️ Complete todos los campos", "error");
@@ -180,14 +197,12 @@ function validarCamposTexto(nombre, descripcion) {
     return true;
 }
 
-// Verifica si producto existe
 function productoExiste(nombre) {
     return productos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 }
 
 // ================= FUNCIONES DE CÁLCULO =================
 
-// Realiza todos los cálculos para un producto
 function calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV) {
     const gananciaDecimal = ganancia / 100;
     const precioDolar = costo / (1 - gananciaDecimal);
@@ -206,7 +221,6 @@ function calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBC
     };
 }
 
-// Guarda un producto en la lista y en el almacenamiento local
 function guardarProductoEnLista(producto) {
     productos.push(producto);
     localStorage.setItem('productos', JSON.stringify(productos));
@@ -217,7 +231,6 @@ function guardarProductoEnLista(producto) {
 
 // ================= FUNCIONES DE INTERFAZ =================
 
-// Actualiza la tabla con la lista de productos
 function actualizarLista() {
     const tbody = document.querySelector('#listaProductos tbody');
     tbody.innerHTML = '';
@@ -241,7 +254,6 @@ function actualizarLista() {
     });
 }
 
-// Muestra los resultados del cálculo
 function mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, precioUnitarioBolivar) {
     document.getElementById('resultadoPrecioVenta').innerHTML = 
         `<strong>Precio al mayor:</strong> $${precioDolar.toFixed(2)} / Bs${precioBolivares.toFixed(2)}`;
@@ -249,7 +261,6 @@ function mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, pr
         `<strong>Precio unitario:</strong> $${precioUnitarioDolar.toFixed(2)} / Bs${precioUnitarioBolivar.toFixed(2)}`;
 }
 
-// Reinicia los campos del formulario
 function reiniciarCalculadora() {
     document.getElementById('producto').value = '';
     document.getElementById('costo').value = '';
@@ -260,7 +271,6 @@ function reiniciarCalculadora() {
 
 // ================= FUNCIONES DE BÚSQUEDA Y GESTIÓN =================
 
-// Busca productos en la lista
 function buscarProducto() {
     const filtro = document.getElementById('buscar').value.toLowerCase();
     const filas = document.querySelectorAll('#listaProductos tbody tr');
@@ -271,7 +281,6 @@ function buscarProducto() {
     });
 }
 
-// Edita un producto existente
 function editarProducto(index) {
     const producto = productos[index];
     const nuevoNombre = prompt("Nombre:", producto.nombre);
@@ -295,7 +304,6 @@ function editarProducto(index) {
     }
 }
 
-// Elimina un producto
 function eliminarProducto(index) {
     if (confirm(`¿Eliminar "${productos[index].nombre}"?`)) {
         productos.splice(index, 1);
@@ -305,7 +313,6 @@ function eliminarProducto(index) {
     }
 }
 
-// Limpia toda la lista de productos
 function limpiarLista() {
     if (confirm("¿Borrar TODOS los productos?")) {
         productos = [];
@@ -317,7 +324,6 @@ function limpiarLista() {
 
 // ================= FUNCIONES DE IMPRESIÓN =================
 
-// Genera un PDF con la lista de productos
 function generarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -344,7 +350,6 @@ function generarPDF() {
     mostrarToast("✅ PDF generado con éxito");
 }
 
-// Imprime un ticket para un producto
 function imprimirTicket(index) {
     const producto = productos[index];
     const ventana = window.open('', '_blank', 'width=80mm,height=150px');
@@ -407,7 +412,6 @@ function imprimirTicket(index) {
 
 // ================= FUNCIONES DE NOTIFICACIÓN =================
 
-// Muestra notificaciones Toast
 function mostrarToast(mensaje, tipo = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
@@ -416,12 +420,10 @@ function mostrarToast(mensaje, tipo = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Detecta si es dispositivo móvil
 function esDispositivoMovil() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// Función para cerrar sesión
 function cerrarSesion() {
     let mensaje = "⚠️ Antes de cerrar:\n\n1. Recomendamos GENERAR UN PDF de respaldo.\n";
     
