@@ -142,6 +142,11 @@ p {
 /* Lista de costos */
 #listaCostosContainer {
     width: 100%;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 #listaCostos {
@@ -150,10 +155,36 @@ p {
 }
 
 #listaCostos li {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
+}
+
+#listaCostos li span:first-child {
+    flex: 2;
+}
+
+#listaCostos li span:last-child {
+    flex: 1;
+    text-align: right;
+    font-family: monospace;
+}
+
+.generar-pdf-costos {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.generar-pdf-costos:hover {
+    background-color: #27ae60;
 }
 
 /* Toast de notificaciones */
