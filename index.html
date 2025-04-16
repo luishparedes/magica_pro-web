@@ -6,6 +6,7 @@
     <title>Calculadora Mágica</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="calculator">
@@ -95,6 +96,7 @@
         <!-- Lista de Costos (oculta por defecto) -->
         <div id="listaCostosContainer" style="display: none;">
             <h3>Lista de Costos de Productos</h3>
+            <button onclick="generarPDFCostos()" class="generar-pdf-costos">📄 Convertir a PDF</button>
             <ul id="listaCostos"></ul>
         </div>
     </div>
