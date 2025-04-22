@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarLista();
 });
 
-// ================= FUNCIONES PRINCIPALES =================
+// ================= FUNCIONES PRINCIPALES (OPTIMIZADAS) =================
 
 function cargarDatosIniciales() {
     document.getElementById('nombreEstablecimiento').value = nombreEstablecimiento;
@@ -54,7 +54,7 @@ function guardarProducto() {
     guardarProductoEnLista(producto);
 }
 
-// ================= FUNCIONES DE GESTIÓN =================
+// ================= FUNCIONES DE GESTIÓN (CON ORDENAMIENTO) =================
 
 function actualizarTasaBCV() {
     const nuevaTasa = parseFloat(document.getElementById('tasaBCV').value);
@@ -93,7 +93,7 @@ function guardarNombreEstablecimiento() {
     mostrarToast(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
 }
 
-// ================= FUNCIONES ADICIONALES =================
+// ================= FUNCIONES DE LISTADO (ORDENADAS ALFABÉTICAMENTE) =================
 
 function mostrarListaCostos() {
     const container = document.getElementById('listaCostosContainer');
@@ -105,9 +105,7 @@ function mostrarListaCostos() {
         if (productos.length === 0) {
             lista.innerHTML = '<li>No hay productos registrados</li>';
         } else {
-            const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
-            
-            productosOrdenados.forEach(producto => {
+            obtenerProductosOrdenados().forEach(producto => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span><strong>${producto.nombre}</strong> (${producto.descripcion})</span>
@@ -123,55 +121,41 @@ function mostrarListaCostos() {
     }
 }
 
-function generarPDFCostos() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(16);
-    doc.text(`Lista de Costos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Tasa BCV: ${tasaBCVGuardada}`, 105, 22, { align: 'center' });
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 28, { align: 'center' });
-    
-    const columns = [
-        { header: 'Producto', dataKey: 'nombre' },
-        { header: 'Descripción', dataKey: 'descripcion' },
-        { header: 'Costo ($)', dataKey: 'costoDolar' },
-        { header: 'Costo (Bs)', dataKey: 'costoBolivar' }
-    ];
-    
-    const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
-    const rows = productosOrdenados.map(producto => ({
-        nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        costoDolar: `$${producto.costo.toFixed(2)}`,
-        costoBolivar: `Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}`
-    }));
-    
-    doc.autoTable({
-        startY: 35,
-        head: [columns.map(col => col.header)],
-        body: rows.map(row => columns.map(col => row[col.dataKey])),
-        margin: { horizontal: 10 },
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+function actualizarLista() {
+    const tbody = document.querySelector('#listaProductos tbody');
+    tbody.innerHTML = '';
+
+    if (productos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No hay productos registrados</td></tr>';
+        return;
+    }
+
+    obtenerProductosOrdenados().forEach(producto => {
+        const originalIndex = productos.findIndex(p => p.nombre === producto.nombre);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${producto.nombre}</td>
+            <td>${producto.descripcion}</td>
+            <td>$${producto.precioMayorDolar.toFixed(2)}</td>
+            <td>Bs${producto.precioMayorBolivar.toFixed(2)}</td>
+            <td>$${producto.precioUnitarioDolar.toFixed(2)}</td>
+            <td>Bs${producto.precioUnitarioBolivar.toFixed(2)}</td>
+            <td>
+                <button class="editar" onclick="editarProducto(${originalIndex})">Editar</button>
+                <button class="imprimir" onclick="imprimirTicket(${originalIndex})">Imprimir</button>
+                <button class="eliminar" onclick="eliminarProducto(${originalIndex})">Eliminar</button>
+            </td>
+        `;
+        tbody.appendChild(row);
     });
-    
-    doc.save('lista_costos.pdf');
-    mostrarToast("✅ PDF de costos generado con éxito");
 }
 
-function guardarTasaEnHistorial(tasa) {
-    let historial = JSON.parse(localStorage.getItem('historialTasas')) || [];
-    historial.unshift({
-        fecha: new Date().toLocaleString(),
-        tasa: tasa
-    });
-    historial = historial.slice(0, 6);
-    localStorage.setItem('historialTasas', JSON.stringify(historial));
+// Función auxiliar para ordenamiento (optimizada)
+function obtenerProductosOrdenados() {
+    return [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
 }
 
-// ================= FUNCIONES DE VALIDACIÓN =================
+// ================= FUNCIONES DE VALIDACIÓN (ORIGINALES) =================
 
 function validarTasaBCV(tasa) {
     if (isNaN(tasa) || tasa <= 0) {
@@ -201,7 +185,7 @@ function productoExiste(nombre) {
     return productos.some(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 }
 
-// ================= FUNCIONES DE CÁLCULO =================
+// ================= FUNCIONES DE CÁLCULO (ORIGINALES) =================
 
 function calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBCV) {
     const gananciaDecimal = ganancia / 100;
@@ -217,7 +201,8 @@ function calcularProducto(nombre, descripcion, costo, ganancia, unidades, tasaBC
         precioMayorDolar: precioDolar,
         precioMayorBolivar: precioBolivares,
         precioUnitarioDolar: precioDolar / unidades,
-        precioUnitarioBolivar: precioBolivares / unidades
+        precioUnitarioBolivar: precioBolivares / unidades,
+        fechaActualizacion: new Date().toISOString()
     };
 }
 
@@ -229,30 +214,7 @@ function guardarProductoEnLista(producto) {
     mostrarToast("✅ Producto guardado exitosamente");
 }
 
-// ================= FUNCIONES DE INTERFAZ =================
-
-function actualizarLista() {
-    const tbody = document.querySelector('#listaProductos tbody');
-    tbody.innerHTML = '';
-
-    productos.forEach((producto, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${producto.nombre}</td>
-            <td>${producto.descripcion}</td>
-            <td>$${producto.precioMayorDolar.toFixed(2)}</td>
-            <td>Bs${producto.precioMayorBolivar.toFixed(2)}</td>
-            <td>$${producto.precioUnitarioDolar.toFixed(2)}</td>
-            <td>Bs${producto.precioUnitarioBolivar.toFixed(2)}</td>
-            <td>
-                <button class="editar" onclick="editarProducto(${index})">Editar</button>
-                <button class="imprimir" onclick="imprimirTicket(${index})">Imprimir</button>
-                <button class="eliminar" onclick="eliminarProducto(${index})">Eliminar</button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
+// ================= FUNCIONES DE INTERFAZ (ORIGINALES) =================
 
 function mostrarResultados(precioDolar, precioBolivares, precioUnitarioDolar, precioUnitarioBolivar) {
     document.getElementById('resultadoPrecioVenta').innerHTML = 
@@ -269,7 +231,7 @@ function reiniciarCalculadora() {
     document.getElementById('descripcion').selectedIndex = 0;
 }
 
-// ================= FUNCIONES DE BÚSQUEDA Y GESTIÓN =================
+// ================= FUNCIONES DE BÚSQUEDA Y GESTIÓN (ORIGINALES) =================
 
 function buscarProducto() {
     const filtro = document.getElementById('buscar').value.toLowerCase();
@@ -322,7 +284,7 @@ function limpiarLista() {
     }
 }
 
-// ================= FUNCIONES DE IMPRESIÓN =================
+// ================= FUNCIONES DE IMPRESIÓN (OPTIMIZADAS) =================
 
 function generarPDF() {
     const { jsPDF } = window.jspdf;
@@ -330,20 +292,34 @@ function generarPDF() {
     
     doc.setFontSize(16);
     doc.text(`Lista de Productos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    
     doc.setFontSize(10);
-    let y = 30;
+    doc.text(`Tasa BCV: ${tasaBCVGuardada} | Fecha: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
     
-    productos.forEach(producto => {
-        doc.text(`• ${producto.nombre} (${producto.descripcion})`, 10, y);
-        doc.text(`Mayor: $${producto.precioMayorDolar.toFixed(2)} | Bs${producto.precioMayorBolivar.toFixed(2)}`, 10, y + 5);
-        doc.text(`Unitario: $${producto.precioUnitarioDolar.toFixed(2)} | Bs${producto.precioUnitarioBolivar.toFixed(2)}`, 10, y + 10);
-        y += 15;
-        
-        if (y > 280) {
-            doc.addPage();
-            y = 20;
-        }
+    const columns = [
+        { header: 'Producto', dataKey: 'nombre' },
+        { header: 'Descripción', dataKey: 'descripcion' },
+        { header: 'Precio $', dataKey: 'precioDolar' },
+        { header: 'Precio Bs', dataKey: 'precioBolivar' },
+        { header: 'Unitario $', dataKey: 'unitarioDolar' },
+        { header: 'Unitario Bs', dataKey: 'unitarioBolivar' }
+    ];
+    
+    const rows = obtenerProductosOrdenados().map(producto => ({
+        nombre: producto.nombre,
+        descripcion: producto.descripcion,
+        precioDolar: `$${producto.precioMayorDolar.toFixed(2)}`,
+        precioBolivar: `Bs${producto.precioMayorBolivar.toFixed(2)}`,
+        unitarioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+        unitarioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
+    }));
+    
+    doc.autoTable({
+        startY: 30,
+        head: [columns.map(col => col.header)],
+        body: rows.map(row => columns.map(col => row[col.dataKey])),
+        margin: { horizontal: 5 },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
     });
     
     doc.save('lista_productos.pdf');
@@ -376,11 +352,16 @@ function imprimirTicket(index) {
                     font-size: 16px;
                     margin-bottom: 3mm;
                 }
+                .producto {
+                    text-align: center;
+                    font-size: 18px;
+                    margin: 2mm 0;
+                }
                 .price {
                     text-align: center;
-                    font-size: 22px;
+                    font-size: 24px;
                     font-weight: bold;
-                    margin: 10mm 0;
+                    margin: 5mm 0;
                 }
                 .divider {
                     border-top: 1px dashed #000;
@@ -396,8 +377,10 @@ function imprimirTicket(index) {
         </head>
         <body>
             <div class="header">${nombreEstablecimiento || 'Mi Negocio'}</div>
+            <div class="producto">${producto.nombre}</div>
             <div class="price">Bs ${producto.precioUnitarioBolivar.toFixed(2).replace('.', ',')}</div>
-            <div class="footer">¡Gracias por su compra!</div>
+            <div class="divider"></div>
+            <div class="footer">${new Date().toLocaleDateString()}</div>
             <script>
                 setTimeout(function() {
                     window.print();
@@ -410,7 +393,7 @@ function imprimirTicket(index) {
     ventana.document.close();
 }
 
-// ================= FUNCIONES DE NOTIFICACIÓN =================
+// ================= FUNCIONES DE NOTIFICACIÓN (ORIGINALES) =================
 
 function mostrarToast(mensaje, tipo = 'success') {
     const toast = document.createElement('div');
