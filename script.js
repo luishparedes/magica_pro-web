@@ -235,7 +235,11 @@ function actualizarLista() {
     const tbody = document.querySelector('#listaProductos tbody');
     tbody.innerHTML = '';
 
-    productos.forEach((producto, index) => {
+    // Ordenar productos alfabéticamente antes de mostrarlos
+    const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    productosOrdenados.forEach((producto, index) => {
+        const originalIndex = productos.findIndex(p => p.nombre === producto.nombre);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${producto.nombre}</td>
@@ -245,9 +249,9 @@ function actualizarLista() {
             <td>$${producto.precioUnitarioDolar.toFixed(2)}</td>
             <td>Bs${producto.precioUnitarioBolivar.toFixed(2)}</td>
             <td>
-                <button class="editar" onclick="editarProducto(${index})">Editar</button>
-                <button class="imprimir" onclick="imprimirTicket(${index})">Imprimir</button>
-                <button class="eliminar" onclick="eliminarProducto(${index})">Eliminar</button>
+                <button class="editar" onclick="editarProducto(${originalIndex})">Editar</button>
+                <button class="imprimir" onclick="imprimirTicket(${originalIndex})">Imprimir</button>
+                <button class="eliminar" onclick="eliminarProducto(${originalIndex})">Eliminar</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -334,7 +338,10 @@ function generarPDF() {
     doc.setFontSize(10);
     let y = 30;
     
-    productos.forEach(producto => {
+    // Ordenar productos alfabéticamente antes de generar el PDF
+    const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    productosOrdenados.forEach(producto => {
         doc.text(`• ${producto.nombre} (${producto.descripcion})`, 10, y);
         doc.text(`Mayor: $${producto.precioMayorDolar.toFixed(2)} | Bs${producto.precioMayorBolivar.toFixed(2)}`, 10, y + 5);
         doc.text(`Unitario: $${producto.precioUnitarioDolar.toFixed(2)} | Bs${producto.precioUnitarioBolivar.toFixed(2)}`, 10, y + 10);
