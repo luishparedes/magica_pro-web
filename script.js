@@ -368,48 +368,45 @@ function imprimirTicket(index) {
             <title>Ticket</title>
             <meta charset="UTF-8">
             <style>
-                @page { size: 80mm auto; margin: 0; }
+                @page { 
+                    size: 52mm auto; 
+                    margin: 0; 
+                }
                 body {
                     font-family: Arial, sans-serif;
-                    width: 80mm;
+                    width: 52mm;
                     margin: 0;
                     padding: 2mm;
-                    font-size: 14px;
-                    line-height: 1.3;
+                    font-size: 12px;
+                    line-height: 1.2;
                 }
                 .header {
                     text-align: center;
                     font-weight: bold;
-                    font-size: 16px;
-                    margin-bottom: 3mm;
+                    font-size: 14px;
+                    margin-bottom: 2mm;
                 }
                 .product-name {
                     text-align: center;
-                    font-size: 18px;
+                    font-size: 16px;
                     font-weight: bold;
-                    margin: 5mm 0;
+                    margin: 3mm 0;
                     word-break: break-word;
                 }
                 .price {
                     text-align: center;
-                    font-size: 24px;
+                    font-size: 20px;
                     font-weight: bold;
-                    margin: 5mm 0;
+                    margin: 3mm 0;
                 }
                 .establishment {
                     text-align: center;
-                    font-size: 14px;
-                    margin-top: 5mm;
-                }
-                .divider {
-                    border-top: 1px dashed #000;
-                    margin: 3mm auto;
-                    width: 70%;
+                    font-size: 12px;
+                    margin-top: 3mm;
                 }
             </style>
         </head>
         <body>
-            <div class="header">PRECIO UNITARIO</div>
             <div class="product-name">${producto.nombre}</div>
             <div class="price">Bs ${producto.precioUnitarioBolivar.toFixed(2).replace('.', ',')}</div>
             <div class="establishment">${nombreEstablecimiento || 'Mi Negocio'}</div>
