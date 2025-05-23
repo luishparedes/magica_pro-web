@@ -359,7 +359,7 @@ function generarPDF() {
 
 function imprimirTicket(index) {
     const producto = productos[index];
-    const ventana = window.open('', '_blank', 'width=80mm,height=150px');
+    const ventana = window.open('', '_blank', 'width=80mm,height=50mm');
     
     ventana.document.write(`
         <!DOCTYPE html>
@@ -369,40 +369,41 @@ function imprimirTicket(index) {
             <meta charset="UTF-8">
             <style>
                 @page { 
-                    size: 52mm auto; 
-                    margin: 0; 
+                    size: 52mm 25mm; 
+                    margin: 0;
+                    padding: 0;
                 }
                 body {
                     font-family: Arial, sans-serif;
                     width: 52mm;
+                    height: 25mm;
                     margin: 0;
-                    padding: 2mm;
+                    padding: 1mm;
                     font-size: 12px;
                     line-height: 1.2;
-                }
-                .header {
-                    text-align: center;
-                    font-weight: bold;
-                    font-size: 14px;
-                    margin-bottom: 2mm;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
                 }
                 .product-name {
                     text-align: center;
-                    font-size: 16px;
+                    font-size: 14px;
                     font-weight: bold;
-                    margin: 3mm 0;
+                    margin-bottom: 2px;
                     word-break: break-word;
+                    max-width: 100%;
                 }
                 .price {
                     text-align: center;
-                    font-size: 20px;
+                    font-size: 18px;
                     font-weight: bold;
-                    margin: 3mm 0;
+                    margin: 3px 0;
                 }
                 .establishment {
                     text-align: center;
-                    font-size: 12px;
-                    margin-top: 3mm;
+                    font-size: 10px;
+                    margin-top: 2px;
                 }
             </style>
         </head>
