@@ -383,28 +383,36 @@ function imprimirTicket(index) {
                     font-size: 16px;
                     margin-bottom: 3mm;
                 }
+                .product-name {
+                    text-align: center;
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 5mm 0;
+                    word-break: break-word;
+                }
                 .price {
                     text-align: center;
-                    font-size: 22px;
+                    font-size: 24px;
                     font-weight: bold;
-                    margin: 10mm 0;
+                    margin: 5mm 0;
+                }
+                .establishment {
+                    text-align: center;
+                    font-size: 14px;
+                    margin-top: 5mm;
                 }
                 .divider {
                     border-top: 1px dashed #000;
                     margin: 3mm auto;
                     width: 70%;
                 }
-                .footer {
-                    text-align: center;
-                    font-style: italic;
-                    margin-top: 3mm;
-                }
             </style>
         </head>
         <body>
-            <div class="header">${nombreEstablecimiento || 'Mi Negocio'}</div>
+            <div class="header">PRECIO UNITARIO</div>
+            <div class="product-name">${producto.nombre}</div>
             <div class="price">Bs ${producto.precioUnitarioBolivar.toFixed(2).replace('.', ',')}</div>
-            <div class="footer">¡Gracias por su compra!</div>
+            <div class="establishment">${nombreEstablecimiento || 'Mi Negocio'}</div>
             <script>
                 setTimeout(function() {
                     window.print();
