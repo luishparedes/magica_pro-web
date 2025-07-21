@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* Estilos para el mensaje de derechos de autor */
         .copyright-notice {
             position: fixed;
             bottom: 20px;
@@ -67,13 +66,43 @@
             font-weight: bold;
             font-size: 18px;
         }
+
+        .inventario-bajo {
+            color: red;
+            font-weight: bold;
+        }
+
+        #listaCostosContainer {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #listaCostos {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #listaCostos li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .costos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <!-- Icono flotante de copyright -->
     <div class="copyright-icon" onclick="toggleCopyrightNotice()">©</div>
     
-    <!-- Mensaje de derechos de autor -->
     <div class="copyright-notice" id="copyrightNotice">
         <button class="close-btn" onclick="toggleCopyrightNotice()">×</button>
         <strong>ADVERTENCIA:</strong> Este sistema está protegido por derechos de autor. 
@@ -84,21 +113,18 @@
     <div class="calculator">
         <h2>Calculadora Mágica</h2>
         
-        <!-- Sección Nombre Establecimiento -->
         <section>
             <h3>Nombre del Establecimiento</h3>
             <input type="text" id="nombreEstablecimiento" placeholder="Ej: Tienda La Bendición">
             <button onclick="guardarNombreEstablecimiento()">Guardar Nombre</button>
         </section>
 
-        <!-- Sección Tasa BCV -->
         <section>
             <h3>Tasa BCV</h3>
             <input type="number" id="tasaBCV" placeholder="Tasa BCV" required="true">
             <button onclick="actualizarTasaBCV()">Actualizar Tasa BCV</button>
         </section>
 
-        <!-- Sección Datos Producto -->
         <section>
             <h3>Datos del Producto</h3>
             <input type="text" id="producto" placeholder="Nombre del producto" required="true">
@@ -124,20 +150,18 @@
             </select>
         </section>
 
-        <!-- Sección Precio Venta -->
         <section>
             <h3>Precio de Venta</h3>
             <input type="number" id="ganancia" placeholder="Porcentaje de ganancia" required="true">
-            <input type="number" id="unidades" placeholder="Unidades que trae la caja" required="true">
+            <input type="number" id="unidadesPorCaja" placeholder="Unidades que trae la caja" required="true">
+            <input type="number" id="unidadesExistentes" placeholder="Unidades existentes" required="true">
             <button onclick="calcularPrecioVenta()">Calcular Precio de Venta</button>
-            <p id="resultadoPrecioVenta">Precio al mayor: </p>
             <p id="precioUnitario">Precio unitario: </p>
         </section>
 
         <button onclick="guardarProducto()">Guardar Producto</button>
     </div>
 
-    <!-- Lista de Productos -->
     <div id="listaProductos">
         <input type="text" id="buscar" placeholder="Buscar producto">
         <button onclick="buscarProducto()">Buscar</button>
@@ -147,8 +171,8 @@
                 <tr>
                     <th>Producto</th>
                     <th>Descripción</th>
-                    <th>Precio Mayor ($)</th>
-                    <th>Precio Mayor (Bs)</th>
+                    <th>Existencias</th>
+                    <th>Ajustar Inventario</th>
                     <th>Precio Unitario ($)</th>
                     <th>Precio Unitario (Bs)</th>
                     <th>Acciones</th>
@@ -157,33 +181,31 @@
             <tbody></tbody>
         </table>
 
-        <!-- Botones de Acción -->
         <div class="action-buttons">
-            <button onclick="generarPDF()" class="generar-pdf">Generar PDF</button>
+            <button onclick="generarReporteDiario()" class="generar-pdf">Generar Reporte Diario</button>
             <button onclick="mostrarListaCostos()" class="lista-costos">Mostrar Lista de Costos</button>
+            <button onclick="generarRespaldoCompleto()" class="generar-respaldo">Generar Respaldo Completo</button>
             <button onclick="cerrarSesion()" class="btn-cerrar-sesion">✅ Cerrar Sesión</button>
             <button onclick="limpiarLista()" class="limpiar-lista">Limpiar Lista</button>
         </div>
 
-        <!-- Lista de Costos (oculta por defecto) -->
         <div id="listaCostosContainer" style="display: none;">
-            <h3>Lista de Costos de Productos</h3>
-            <button onclick="generarPDFCostos()" class="generar-pdf-costos">📄 Convertir a PDF</button>
+            <div class="costos-header">
+                <h3>Lista de Costos de Productos</h3>
+                <button onclick="generarPDFCostos()" class="generar-pdf-costos">📄 Convertir a PDF</button>
+            </div>
             <ul id="listaCostos"></ul>
         </div>
     </div>
 
     <script>
-        // Función para mostrar/ocultar el mensaje de copyright
         function toggleCopyrightNotice() {
             const notice = document.getElementById('copyrightNotice');
             notice.classList.toggle('show');
         }
         
-        // Mostrar el mensaje automáticamente al cargar la página (después de 5 segundos)
         setTimeout(() => {
             toggleCopyrightNotice();
-            // Ocultar después de 15 segundos
             setTimeout(() => {
                 const notice = document.getElementById('copyrightNotice');
                 if (notice.classList.contains('show')) {
