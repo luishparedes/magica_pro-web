@@ -197,6 +197,15 @@ p {
     background: linear-gradient(to right, #7b1fa2, #8e24aa);
 }
 
+#listaProductos button.generar-respaldo {
+    background: linear-gradient(to right, #607d8b, #78909c);
+    margin-top: 15px;
+}
+
+#listaProductos button.generar-respaldo:hover {
+    background: linear-gradient(to right, #455a64, #546e7a);
+}
+
 /* Botón Cerrar Sesión */
 #listaProductos button.btn-cerrar-sesion {
     background: linear-gradient(to right, #607d8b, #78909c);
@@ -262,7 +271,7 @@ p {
     font-weight: bold;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
+    width: auto;
 }
 
 .generar-pdf-costos:hover {
@@ -309,6 +318,35 @@ p {
     }
 }
 
+/* Estilos para el inventario */
+.inventario-bajo {
+    color: #f44336;
+    font-weight: bold;
+    background-color: #ffebee;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.ajuste-inventario {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ajuste-inventario button {
+    padding: 5px 10px;
+    min-width: 30px;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.ajuste-inventario input {
+    width: 50px;
+    padding: 5px;
+    text-align: center;
+    margin: 0;
+}
+
 /* Responsivo */
 @media (max-width: 768px) {
     body {
@@ -344,6 +382,15 @@ p {
     
     #listaCostosContainer {
         padding: 15px;
+    }
+
+    .ajuste-inventario {
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .ajuste-inventario input {
+        width: 40px;
     }
 }
 
