@@ -103,40 +103,62 @@ function generarPDFCostos() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(16);
-    doc.text(`Lista de Costos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()} | Tasa BCV: ${tasaBCVGuardada}`, 105, 22, { align: 'center' });
-    
-    // Tabla de costos
-    const columns = [
-        { header: 'Producto', dataKey: 'nombre' },
-        { header: 'Descripción', dataKey: 'descripcion' },
-        { header: 'Costo ($)', dataKey: 'costoDolar' },
-        { header: 'Costo (Bs)', dataKey: 'costoBolivar' }
-    ];
-    
-    const rows = productos.map(producto => ({
-        nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        costoDolar: `$${producto.costo.toFixed(2)}`,
-        costoBolivar: `Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}`
-    }));
-    
-    doc.autoTable({
-        startY: 30,
-        head: [columns.map(col => col.header)],
-        body: rows.map(row => columns.map(col => row[col.dataKey])),
-        margin: { horizontal: 10 },
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
-    });
-    
-    doc.save(`lista_costos_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarToast("✅ Lista de costos generada en PDF");
+    // Verificar si estamos en móvil
+    if (esDispositivoMovil()) {
+        if (!confirm("📱 Estás en un dispositivo móvil. La generación de PDF puede fallar. ¿Continuar?")) {
+            return;
+        }
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(16);
+        doc.text(`Lista de Costos - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Fecha: ${new Date().toLocaleDateString()} | Tasa BCV: ${tasaBCVGuardada}`, 105, 22, { align: 'center' });
+        
+        // Tabla de costos
+        const columns = [
+            { header: 'Producto', dataKey: 'nombre' },
+            { header: 'Descripción', dataKey: 'descripcion' },
+            { header: 'Costo ($)', dataKey: 'costoDolar' },
+            { header: 'Costo (Bs)', dataKey: 'costoBolivar' }
+        ];
+        
+        const rows = productos.map(producto => ({
+            nombre: producto.nombre,
+            descripcion: producto.descripcion,
+            costoDolar: `$${producto.costo.toFixed(2)}`,
+            costoBolivar: `Bs${(producto.costo * tasaBCVGuardada).toFixed(2)}`
+        }));
+        
+        doc.autoTable({
+            startY: 30,
+            head: [columns.map(col => col.header)],
+            body: rows.map(row => columns.map(col => row[col.dataKey])),
+            margin: { horizontal: 10 },
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+        });
+        
+        // Método alternativo para móviles
+        if (esDispositivoMovil()) {
+            const pdfData = doc.output('datauristring');
+            const nuevaVentana = window.open();
+            nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
+            mostrarToast("✅ PDF generado. Abriendo en nueva ventana...");
+        } else {
+            doc.save(`lista_costos_${new Date().toISOString().split('T')[0]}.pdf`);
+            mostrarToast("✅ Lista de costos generada en PDF");
+        }
+    } catch (error) {
+        mostrarToast("❌ Error al generar PDF: " + error.message, "error");
+        if (esDispositivoMovil()) {
+            mostrarToast("📱 En móviles, prueba con Chrome o Firefox", "warning");
+        }
+    }
 }
 
 // ================= FUNCIONES DE RESPALDO =================
@@ -147,96 +169,123 @@ function generarRespaldoCompleto() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Página 1: Información general
-    doc.setFontSize(16);
-    doc.text(`Respaldo Completo - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
-    doc.text(`Tasa BCV: ${tasaBCVGuardada}`, 105, 28, { align: 'center' });
-    
-    // Resumen
-    doc.text(`Total Productos: ${productos.length}`, 20, 40);
-    doc.text(`Total Ventas Hoy: ${ventasDiarias.length}`, 20, 46);
-    
-    const totalVentasDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
-    const totalVentasBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
-    doc.text(`Ventas Totales $: ${totalVentasDolar.toFixed(2)}`, 20, 52);
-    doc.text(`Ventas Totales Bs: ${totalVentasBolivar.toFixed(2)}`, 20, 58);
-    
-    // Página 2: Lista de productos
-    doc.addPage();
-    doc.setFontSize(16);
-    doc.text(`Inventario de Productos`, 105, 15, { align: 'center' });
-    
-    const columns = [
-        { header: 'Producto', dataKey: 'nombre' },
-        { header: 'Descripción', dataKey: 'descripcion' },
-        { header: 'Existencias', dataKey: 'existencias' },
-        { header: 'Precio ($)', dataKey: 'precioDolar' },
-        { header: 'Precio (Bs)', dataKey: 'precioBolivar' }
-    ];
-    
-    const rows = productos.map(producto => ({
-        nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        existencias: producto.unidadesExistentes,
-        precioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-        precioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
-    }));
-    
-    doc.autoTable({
-        startY: 25,
-        head: [columns.map(col => col.header)],
-        body: rows.map(row => columns.map(col => row[col.dataKey])),
-        margin: { horizontal: 10 },
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [26, 188, 156], textColor: 255 },
-        didDrawCell: (data) => {
-            if (data.column.dataKey === 'existencias' && data.cell.raw <= 5) {
-                doc.setTextColor(255, 0, 0);
-            }
-        }
-    });
-    
-    // Página 3: Ventas diarias (si hay)
-    if (ventasDiarias.length > 0) {
+    // Verificar si estamos en móvil
+    if (esDispositivoMovil()) {
+        const confirmacion = confirm(
+            "📱 Generar PDF en móvil:\n\n" +
+            "1. Puede ser lento con muchos datos\n" +
+            "2. Recomendado usar WiFi\n" +
+            "3. Usa Chrome o Firefox\n\n" +
+            "¿Continuar?"
+        );
+        if (!confirmacion) return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Página 1: Información general
+        doc.setFontSize(16);
+        doc.text(`Respaldo Completo - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Fecha: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
+        doc.text(`Tasa BCV: ${tasaBCVGuardada}`, 105, 28, { align: 'center' });
+        
+        // Resumen
+        doc.text(`Total Productos: ${productos.length}`, 20, 40);
+        doc.text(`Total Ventas Hoy: ${ventasDiarias.length}`, 20, 46);
+        
+        const totalVentasDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
+        const totalVentasBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
+        doc.text(`Ventas Totales $: ${totalVentasDolar.toFixed(2)}`, 20, 52);
+        doc.text(`Ventas Totales Bs: ${totalVentasBolivar.toFixed(2)}`, 20, 58);
+        
+        // Página 2: Lista de productos
         doc.addPage();
         doc.setFontSize(16);
-        doc.text(`Registro de Ventas`, 105, 15, { align: 'center' });
+        doc.text(`Inventario de Productos`, 105, 15, { align: 'center' });
         
-        const ventasColumns = [
-            { header: 'Producto', dataKey: 'producto' },
-            { header: 'Cantidad', dataKey: 'cantidad' },
+        const columns = [
+            { header: 'Producto', dataKey: 'nombre' },
+            { header: 'Descripción', dataKey: 'descripcion' },
+            { header: 'Existencias', dataKey: 'existencias' },
             { header: 'Precio ($)', dataKey: 'precioDolar' },
-            { header: 'Precio (Bs)', dataKey: 'precioBolivar' },
-            { header: 'Total ($)', dataKey: 'totalDolar' },
-            { header: 'Total (Bs)', dataKey: 'totalBolivar' }
+            { header: 'Precio (Bs)', dataKey: 'precioBolivar' }
         ];
         
-        const ventasRows = ventasDiarias.map(venta => ({
-            producto: venta.producto,
-            cantidad: venta.cantidad,
-            precioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
-            precioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
-            totalDolar: `$${venta.totalDolar.toFixed(2)}`,
-            totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
+        const rows = productos.map(producto => ({
+            nombre: producto.nombre,
+            descripcion: producto.descripcion,
+            existencias: producto.unidadesExistentes,
+            precioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+            precioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
         }));
         
         doc.autoTable({
             startY: 25,
-            head: [ventasColumns.map(col => col.header)],
-            body: ventasRows.map(row => ventasColumns.map(col => row[col.dataKey])),
+            head: [columns.map(col => col.header)],
+            body: rows.map(row => columns.map(col => row[col.dataKey])),
             margin: { horizontal: 10 },
             styles: { fontSize: 8, cellPadding: 3 },
-            headStyles: { fillColor: [155, 89, 182], textColor: 255 }
+            headStyles: { fillColor: [26, 188, 156], textColor: 255 },
+            didDrawCell: (data) => {
+                if (data.column.dataKey === 'existencias' && data.cell.raw <= 5) {
+                    doc.setTextColor(255, 0, 0);
+                }
+            }
         });
+        
+        // Página 3: Ventas diarias (si hay)
+        if (ventasDiarias.length > 0) {
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text(`Registro de Ventas`, 105, 15, { align: 'center' });
+            
+            const ventasColumns = [
+                { header: 'Producto', dataKey: 'producto' },
+                { header: 'Cantidad', dataKey: 'cantidad' },
+                { header: 'Precio ($)', dataKey: 'precioDolar' },
+                { header: 'Precio (Bs)', dataKey: 'precioBolivar' },
+                { header: 'Total ($)', dataKey: 'totalDolar' },
+                { header: 'Total (Bs)', dataKey: 'totalBolivar' }
+            ];
+            
+            const ventasRows = ventasDiarias.map(venta => ({
+                producto: venta.producto,
+                cantidad: venta.cantidad,
+                precioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
+                precioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
+                totalDolar: `$${venta.totalDolar.toFixed(2)}`,
+                totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
+            }));
+            
+            doc.autoTable({
+                startY: 25,
+                head: [ventasColumns.map(col => col.header)],
+                body: ventasRows.map(row => ventasColumns.map(col => row[col.dataKey])),
+                margin: { horizontal: 10 },
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [155, 89, 182], textColor: 255 }
+            });
+        }
+        
+        // Método alternativo para móviles
+        if (esDispositivoMovil()) {
+            const pdfData = doc.output('datauristring');
+            const nuevaVentana = window.open();
+            nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
+            mostrarToast("✅ Respaldo generado. Abriendo en nueva ventana...");
+        } else {
+            doc.save(`respaldo_completo_${new Date().toISOString().split('T')[0]}.pdf`);
+            mostrarToast("✅ Respaldo completo generado en PDF");
+        }
+    } catch (error) {
+        mostrarToast("❌ Error al generar respaldo: " + error.message, "error");
+        if (esDispositivoMovil()) {
+            mostrarToast("📱 En móviles, prueba con menos datos o usa una computadora", "warning");
+        }
     }
-    
-    doc.save(`respaldo_completo_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarToast("✅ Respaldo completo generado en PDF");
 }
 
 // ================= FUNCIONES DE GESTIÓN =================
@@ -320,83 +369,105 @@ function generarReporteDiario() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(16);
-    doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
-    
-    const totalDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
-    const totalBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
-    
-    doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
-    doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
-    
-    const columns = [
-        { header: 'Producto', dataKey: 'producto' },
-        { header: 'Cantidad', dataKey: 'cantidad' },
-        { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
-        { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' },
-        { header: 'Total ($)', dataKey: 'totalDolar' },
-        { header: 'Total (Bs)', dataKey: 'totalBolivar' }
-    ];
-    
-    const rows = ventasDiarias.map(venta => ({
-        producto: venta.producto,
-        cantidad: venta.cantidad,
-        precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
-        precioUnitarioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
-        totalDolar: `$${venta.totalDolar.toFixed(2)}`,
-        totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
-    }));
-    
-    doc.autoTable({
-        startY: 45,
-        head: [columns.map(col => col.header)],
-        body: rows.map(row => columns.map(col => row[col.dataKey])),
-        margin: { horizontal: 10 },
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
-    });
-    
-    doc.addPage();
-    doc.setFontSize(16);
-    doc.text(`Inventario Actual - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-    
-    const inventarioColumns = [
-        { header: 'Producto', dataKey: 'nombre' },
-        { header: 'Descripción', dataKey: 'descripcion' },
-        { header: 'Existencias', dataKey: 'unidadesExistentes' },
-        { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
-        { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' }
-    ];
-    
-    const inventarioRows = productos.map(producto => ({
-        nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        unidadesExistentes: producto.unidadesExistentes,
-        precioUnitarioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-        precioUnitarioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
-    }));
-    
-    doc.autoTable({
-        startY: 25,
-        head: [inventarioColumns.map(col => col.header)],
-        body: inventarioRows.map(row => inventarioColumns.map(col => row[col.dataKey])),
-        margin: { horizontal: 10 },
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [26, 188, 156], textColor: 255 },
-        didDrawCell: (data) => {
-            if (data.column.dataKey === 'unidadesExistentes' && data.cell.raw <= 5) {
-                doc.setTextColor(255, 0, 0);
-            }
+    // Verificar si estamos en móvil
+    if (esDispositivoMovil()) {
+        if (!confirm("📱 Generar reporte en móvil puede ser lento. ¿Continuar?")) {
+            return;
         }
-    });
-    
-    doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarToast("✅ Reporte diario generado con éxito");
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(16);
+        doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+        
+        const totalDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
+        const totalBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
+        
+        doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
+        doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
+        
+        const columns = [
+            { header: 'Producto', dataKey: 'producto' },
+            { header: 'Cantidad', dataKey: 'cantidad' },
+            { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
+            { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' },
+            { header: 'Total ($)', dataKey: 'totalDolar' },
+            { header: 'Total (Bs)', dataKey: 'totalBolivar' }
+        ];
+        
+        const rows = ventasDiarias.map(venta => ({
+            producto: venta.producto,
+            cantidad: venta.cantidad,
+            precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
+            precioUnitarioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
+            totalDolar: `$${venta.totalDolar.toFixed(2)}`,
+            totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
+        }));
+        
+        doc.autoTable({
+            startY: 45,
+            head: [columns.map(col => col.header)],
+            body: rows.map(row => columns.map(col => row[col.dataKey])),
+            margin: { horizontal: 10 },
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+        });
+        
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text(`Inventario Actual - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        
+        const inventarioColumns = [
+            { header: 'Producto', dataKey: 'nombre' },
+            { header: 'Descripción', dataKey: 'descripcion' },
+            { header: 'Existencias', dataKey: 'unidadesExistentes' },
+            { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
+            { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' }
+        ];
+        
+        const inventarioRows = productos.map(producto => ({
+            nombre: producto.nombre,
+            descripcion: producto.descripcion,
+            unidadesExistentes: producto.unidadesExistentes,
+            precioUnitarioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+            precioUnitarioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
+        }));
+        
+        doc.autoTable({
+            startY: 25,
+            head: [inventarioColumns.map(col => col.header)],
+            body: inventarioRows.map(row => inventarioColumns.map(col => row[col.dataKey])),
+            margin: { horizontal: 10 },
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [26, 188, 156], textColor: 255 },
+            didDrawCell: (data) => {
+                if (data.column.dataKey === 'unidadesExistentes' && data.cell.raw <= 5) {
+                    doc.setTextColor(255, 0, 0);
+                }
+            }
+        });
+        
+        // Método alternativo para móviles
+        if (esDispositivoMovil()) {
+            const pdfData = doc.output('datauristring');
+            const nuevaVentana = window.open();
+            nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
+            mostrarToast("✅ Reporte generado. Abriendo en nueva ventana...");
+        } else {
+            doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
+            mostrarToast("✅ Reporte diario generado con éxito");
+        }
+    } catch (error) {
+        mostrarToast("❌ Error al generar reporte: " + error.message, "error");
+        if (esDispositivoMovil()) {
+            mostrarToast("📱 En móviles, prueba con menos datos o usa una computadora", "warning");
+        }
+    }
 }
 
 // ================= FUNCIONES DE CÁLCULO =================
