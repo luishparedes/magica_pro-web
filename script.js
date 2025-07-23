@@ -169,121 +169,117 @@ function generarRespaldoCompleto() {
         return;
     }
 
-    // Verificar si estamos en móvil
-    if (esDispositivoMovil()) {
+    // Detección mejorada de Android
+    const esAndroid = /Android/i.test(navigator.userAgent);
+    const esChrome = /Chrome/i.test(navigator.userAgent);
+    
+    if (esAndroid) {
         const confirmacion = confirm(
-            "📱 Generar PDF en móvil:\n\n" +
-            "1. Puede ser lento con muchos datos\n" +
-            "2. Recomendado usar WiFi\n" +
-            "3. Usa Chrome o Firefox\n\n" +
-            "¿Continuar?"
+            "📱 Generar PDF en Android:\n\n" +
+            "1. Usa Chrome para mejor compatibilidad\n" +
+            "2. PDFs grandes pueden tardar\n" +
+            "3. Verifica la carpeta 'Descargas'\n\n" +
+            "¿Generar el reporte?"
         );
         if (!confirmacion) return;
     }
 
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // Página 1: Información general
-        doc.setFontSize(16);
-        doc.text(`Respaldo Completo - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // Configuración optimizada para móviles
+        const configMovil = {
+            fontSize: 7,
+            cellPadding: 2,
+            margin: { horizontal: 5 },
+            pageBreak: 'auto',
+            rowPageBreak: 'avoid'
+        };
+
+        // Página 1 - Encabezado simplificado
+        doc.setFontSize(14);
+        doc.text(`Respaldo - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
         doc.setFontSize(10);
-        doc.text(`Fecha: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
-        doc.text(`Tasa BCV: ${tasaBCVGuardada}`, 105, 28, { align: 'center' });
-        
-        // Resumen
-        doc.text(`Total Productos: ${productos.length}`, 20, 40);
-        doc.text(`Total Ventas Hoy: ${ventasDiarias.length}`, 20, 46);
-        
-        const totalVentasDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
-        const totalVentasBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
-        doc.text(`Ventas Totales $: ${totalVentasDolar.toFixed(2)}`, 20, 52);
-        doc.text(`Ventas Totales Bs: ${totalVentasBolivar.toFixed(2)}`, 20, 58);
-        
-        // Página 2: Lista de productos
-        doc.addPage();
-        doc.setFontSize(16);
-        doc.text(`Inventario de Productos`, 105, 15, { align: 'center' });
-        
-        const columns = [
+        doc.text(`Generado: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 22, { align: 'center' });
+        doc.text(`Tasa BCV: ${tasaBCVGuardada} | Productos: ${productos.length}`, 105, 28, { align: 'center' });
+
+        // Tabla principal optimizada para móviles
+      
+         const columns = [
             { header: 'Producto', dataKey: 'nombre' },
-            { header: 'Descripción', dataKey: 'descripcion' },
-            { header: 'Existencias', dataKey: 'existencias' },
-            { header: 'Precio ($)', dataKey: 'precioDolar' },
-            { header: 'Precio (Bs)', dataKey: 'precioBolivar' }
+            { header: 'Unid/Caja', dataKey: 'unidades' },
+            { header: 'Costo$', dataKey: 'costo' },
+            { header: 'Gan%', dataKey: 'ganancia' },
+            { header: 'P.Venta$', dataKey: 'pVentaDolar' },
+            { header: 'P.VentaBs', dataKey: 'pVentaBs' }
         ];
-        
         const rows = productos.map(producto => ({
-            nombre: producto.nombre,
-            descripcion: producto.descripcion,
-            existencias: producto.unidadesExistentes,
-            precioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-            precioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
+            nombre: producto.nombre.substring(0, 15), // Limita caracteres
+              unidades: producto.unidadesPorCaja,
+            costo: `$${producto.costo.toFixed(2)}`,
+            ganancia: `${(producto.ganancia * 100).toFixed(0)}%`,
+            pVentaDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+            pVentaBs: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
         }));
-        
+
         doc.autoTable({
-            startY: 25,
+            startY: 35,
             head: [columns.map(col => col.header)],
             body: rows.map(row => columns.map(col => row[col.dataKey])),
-            margin: { horizontal: 10 },
-            styles: { fontSize: 8, cellPadding: 3 },
-            headStyles: { fillColor: [26, 188, 156], textColor: 255 },
-            didDrawCell: (data) => {
-                if (data.column.dataKey === 'existencias' && data.cell.raw <= 5) {
-                    doc.setTextColor(255, 0, 0);
-                }
+            styles: configMovil,
+            headStyles: { 
+                fillColor: [41, 128, 185],
+                textColor: 255,
+                fontSize: 7
+            },
+            columnStyles: {
+                0: { cellWidth: 30 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 15 },
+                3: { cellWidth: 20 },
+                4: { cellWidth: 25 }
             }
         });
-        
-        // Página 3: Ventas diarias (si hay)
-        if (ventasDiarias.length > 0) {
-            doc.addPage();
-            doc.setFontSize(16);
-            doc.text(`Registro de Ventas`, 105, 15, { align: 'center' });
-            
-            const ventasColumns = [
-                { header: 'Producto', dataKey: 'producto' },
-                { header: 'Cantidad', dataKey: 'cantidad' },
-                { header: 'Precio ($)', dataKey: 'precioDolar' },
-                { header: 'Precio (Bs)', dataKey: 'precioBolivar' },
-                { header: 'Total ($)', dataKey: 'totalDolar' },
-                { header: 'Total (Bs)', dataKey: 'totalBolivar' }
-            ];
-            
-            const ventasRows = ventasDiarias.map(venta => ({
-                producto: venta.producto,
-                cantidad: venta.cantidad,
-                precioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
-                precioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
-                totalDolar: `$${venta.totalDolar.toFixed(2)}`,
-                totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
-            }));
-            
-            doc.autoTable({
-                startY: 25,
-                head: [ventasColumns.map(col => col.header)],
-                body: ventasRows.map(row => ventasColumns.map(col => row[col.dataKey])),
-                margin: { horizontal: 10 },
-                styles: { fontSize: 8, cellPadding: 3 },
-                headStyles: { fillColor: [155, 89, 182], textColor: 255 }
-            });
-        }
-        
-        // Método alternativo para móviles
-        if (esDispositivoMovil()) {
-            const pdfData = doc.output('datauristring');
-            const nuevaVentana = window.open();
-            nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
-            mostrarToast("✅ Respaldo generado. Abriendo en nueva ventana...");
+
+        // Métodos alternativos de descarga para Android
+        if (esAndroid) {
+            // Opción 1: Usar FileSaver.js si está disponible
+            if (window.saveAs) {
+                const pdfBlob = doc.output('blob');
+                saveAs(pdfBlob, `respaldo_${new Date().toISOString().slice(0,10)}.pdf`);
+                mostrarToast("✅ PDF guardado en Descargas");
+            } 
+            // Opción 2: Abrir en nueva pestaña
+            else if (esChrome) {
+                const pdfData = doc.output('dataurlnewwindow');
+                mostrarToast("✅ Abriendo PDF en Chrome...");
+            } 
+            // Opción 3: Descarga tradicional con fallback
+            else {
+                try {
+                    doc.save(`respaldo_${new Date().toISOString().slice(0,10)}.pdf`);
+                } catch (e) {
+                    const pdfData = doc.output('datauristring');
+                    const ventana = window.open();
+                    ventana.document.write(`<iframe src='${pdfData}' style='width:100%;height:100%;border:none'></iframe>`);
+                    mostrarToast("ℹ️ Usa Chrome para descargar directamente");
+                }
+            }
         } else {
-            doc.save(`respaldo_completo_${new Date().toISOString().split('T')[0]}.pdf`);
-            mostrarToast("✅ Respaldo completo generado en PDF");
+            // Descarga normal para escritorio
+            doc.save(`respaldo_${new Date().toISOString().slice(0,10)}.pdf`);
         }
     } catch (error) {
-        mostrarToast("❌ Error al generar respaldo: " + error.message, "error");
-        if (esDispositivoMovil()) {
-            mostrarToast("📱 En móviles, prueba con menos datos o usa una computadora", "warning");
+        console.error("Error generando PDF:", error);
+        mostrarToast(`❌ Error: ${error.message}`, "error");
+        
+        if (esAndroid) {
+            mostrarToast("📌 Solución: \n1. Usa Chrome\n2. Reduce cantidad de productos\n3. Reinicia la app", "warning", 5000);
         }
     }
 }
