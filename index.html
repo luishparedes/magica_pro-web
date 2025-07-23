@@ -3,11 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Meta tags para control de caché (nuevo) -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>Calculadora Mágica</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Librerías JS (FileSaver.js añadida) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
     <style>
+        /* Tus estilos originales preservados exactamente igual */
         .copyright-notice {
             position: fixed;
             bottom: 20px;
@@ -101,6 +111,7 @@
     </style>
 </head>
 <body>
+    <!-- Todo tu contenido HTML original preservado -->
     <div class="copyright-icon" onclick="toggleCopyrightNotice()">©</div>
     
     <div class="copyright-notice" id="copyrightNotice">
@@ -199,20 +210,45 @@
     </div>
 
     <script>
+        // Sistema de actualización (nuevo)
+        const APP_VERSION = "1.2.0"; // Actualiza este número con cada cambio
+        
         function toggleCopyrightNotice() {
             const notice = document.getElementById('copyrightNotice');
             notice.classList.toggle('show');
         }
         
-        setTimeout(() => {
-            toggleCopyrightNotice();
+        function checkAppVersion() {
+            const savedVersion = localStorage.getItem('appVersion');
+            
+            if (!savedVersion) {
+                localStorage.setItem('appVersion', APP_VERSION);
+                return;
+            }
+            
+            if (savedVersion !== APP_VERSION) {
+                setTimeout(() => {
+                    mostrarToast(`✅ Versión ${APP_VERSION} cargada`, "success", 3000);
+                }, 2000);
+                localStorage.setItem('appVersion', APP_VERSION);
+            }
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAppVersion();
+            
+            // Tu código original de copyright
             setTimeout(() => {
-                const notice = document.getElementById('copyrightNotice');
-                if (notice.classList.contains('show')) {
-                    notice.classList.remove('show');
-                }
-            }, 15000);
-        }, 5000);
+                toggleCopyrightNotice();
+                setTimeout(() => {
+                    const notice = document.getElementById('copyrightNotice');
+                    if (notice.classList.contains('show')) {
+                        notice.classList.remove('show');
+                    }
+                }, 15000);
+            }, 5000);
+        });
     </script>
     
     <script src="script.js"></script>
