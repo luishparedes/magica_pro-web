@@ -301,5 +301,23 @@
     <button class="go-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
     <button class="go-bottom" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">↓</button>
 </div>
+    <div id="appLoader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;justify-content:center;align-items:center;">
+    <div style="text-align:center;">
+        <p style="font-size:1.2em;">Cargando última versión...</p>
+        <p id="versionInfo" style="font-size:0.9em;color:#666;"></p>
+    </div>
+</div>
+
+<script>
+    // Mostrar versión actual
+    document.getElementById('versionInfo').textContent = `Versión ${APP_VERSION}`;
+    
+    // Ocultar loader cuando todo esté listo
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            document.getElementById('appLoader').style.display = 'none';
+        }, 1500);
+    });
+</script>
 </body>
 </html>
