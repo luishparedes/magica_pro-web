@@ -1,3 +1,4 @@
+
 // Datos persistentes
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
 let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
@@ -321,19 +322,32 @@ function guardarNombreEstablecimiento() {
     mostrarToast(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
 }
 
+function limpiarVentasAntiguas() {
+    if (ventasDiarias.length === 0) return;
+    
+    const fechasUnicas = [...new Set(ventasDiarias.map(v => v.fecha))];
+    fechasUnicas.sort((a, b) => new Date(b) - new Date(a));
+    
+    if (fechasUnicas.length > 4) {
+        const fechasAEliminar = fechasUnicas.slice(4);
+        ventasDiarias = ventasDiarias.filter(v => !fechasAEliminar.includes(v.fecha));
+        localStorage.setItem('ventasDiarias', JSON.stringify(ventasDiarias));
+    }
+}
+
+function limpiarLista() {
+    if (confirm("⚠️ ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
+        productos = [];
+        localStorage.setItem('productos', JSON.stringify(productos));
+        actualizarLista();
+        mostrarToast("🗑️ Todos los productos han sido eliminados");
+    }
+}
+
 // ================= FUNCIONES DE INVENTARIO =================
 
 function ajustarInventario(index, operacion) {
     const producto = productos[index];
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.value = '1';
-    input.min = '1';
-    input.style.width = '60px';
-    
-    const confirmacion = confirm(`¿Desea ${operacion === 'sumar' ? 'sumar' : 'restar'} unidades de ${producto.nombre}?`);
-    
-    if (!confirmacion) return;
     
     const cantidad = parseInt(prompt(`Ingrese la cantidad a ${operacion === 'sumar' ? 'sumar' : 'restar'}:`, "1")) || 0;
     
@@ -348,19 +362,37 @@ function ajustarInventario(index, operacion) {
             return;
         }
         
-        // Registrar como venta solo si es resta
-        const hoy = new Date().toLocaleDateString();
-        const venta = {
-            fecha: hoy,
-            producto: producto.nombre,
-            cantidad: cantidad,
-            precioUnitarioDolar: producto.precioUnitarioDolar,
-            precioUnitarioBolivar: producto.precioUnitarioBolivar,
-            totalDolar: cantidad * producto.precioUnitarioDolar,
-            totalBolivar: cantidad * producto.precioUnitarioBolivar,
-            tipo: 'ajuste_inventario' // Para diferenciar de ventas normales
-        };
-        ventasDiarias.push(venta);
+        // Registrar como venta
+        const hoy = new Date();
+        const fechaKey = hoy.toLocaleDateString();
+        
+        // Limpiar ventas antiguas (mantener solo 4 días)
+        limpiarVentasAntiguas();
+        
+        // Buscar si ya existe registro para este producto hoy
+        const ventaExistenteIndex = ventasDiarias.findIndex(v => 
+            v.fecha === fechaKey && v.producto === producto.nombre);
+        
+        if (ventaExistenteIndex >= 0) {
+            // Actualizar venta existente
+            ventasDiarias[ventaExistenteIndex].cantidad += cantidad;
+            ventasDiarias[ventaExistenteIndex].totalDolar += cantidad * producto.precioUnitarioDolar;
+            ventasDiarias[ventaExistenteIndex].totalBolivar += cantidad * producto.precioUnitarioBolivar;
+        } else {
+            // Crear nueva venta
+            const venta = {
+                fecha: fechaKey,
+                producto: producto.nombre,
+                cantidad: cantidad,
+                precioUnitarioDolar: producto.precioUnitarioDolar,
+                precioUnitarioBolivar: producto.precioUnitarioBolivar,
+                totalDolar: cantidad * producto.precioUnitarioDolar,
+                totalBolivar: cantidad * producto.precioUnitarioBolivar,
+                tipo: 'venta'
+            };
+            ventasDiarias.push(venta);
+        }
+        
         localStorage.setItem('ventasDiarias', JSON.stringify(ventasDiarias));
     }
 
@@ -371,15 +403,12 @@ function ajustarInventario(index, operacion) {
     
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
-    mostrarToast(`✅ Inventario actualizado: ${producto.nombre} - ${operacion === 'sumar' ? '+' : '-'}${cantidad}`);
+    mostrarToast(`✅ ${operacion === 'sumar' ? 'Inventario actualizado' : 'Venta registrada'}: ${producto.nombre} - ${operacion === 'sumar' ? '+' : '-'}${cantidad}`);
 }
 
 function generarReporteDiario() {
-    const hoy = new Date().toLocaleDateString();
-    const ventasHoy = ventasDiarias.filter(venta => new Date(venta.fecha).toLocaleDateString() === hoy);
-
-    if (ventasHoy.length === 0) {
-        mostrarToast("⚠️ No hay ventas registradas hoy", "warning");
+    if (ventasDiarias.length === 0) {
+        mostrarToast("⚠️ No hay ventas registradas", "warning");
         return;
     }
 
@@ -394,76 +423,60 @@ function generarReporteDiario() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        doc.setFontSize(16);
-        doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-        doc.setFontSize(10);
-        doc.text(`Fecha: ${hoy}`, 105, 22, { align: 'center' });
-        
-        const totalDolar = ventasHoy.reduce((sum, venta) => sum + venta.totalDolar, 0);
-        const totalBolivar = ventasHoy.reduce((sum, venta) => sum + venta.totalBolivar, 0);
-        
-        doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
-        doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
-        
-        const columns = [
-            { header: 'Producto', dataKey: 'producto' },
-            { header: 'Cantidad', dataKey: 'cantidad' },
-            { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
-            { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' },
-            { header: 'Total ($)', dataKey: 'totalDolar' },
-            { header: 'Total (Bs)', dataKey: 'totalBolivar' }
-        ];
-        
-        const rows = ventasHoy.map(venta => ({
-            producto: venta.producto,
-            cantidad: venta.cantidad,
-            precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
-            precioUnitarioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
-            totalDolar: `$${venta.totalDolar.toFixed(2)}`,
-            totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
-        }));
-        
-        doc.autoTable({
-            startY: 45,
-            head: [columns.map(col => col.header)],
-            body: rows.map(row => columns.map(col => row[col.dataKey])),
-            margin: { horizontal: 10 },
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [41, 128, 185], textColor: 255 }
-        });
-        
-        doc.addPage();
-        doc.setFontSize(16);
-        doc.text(`Inventario Actual - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-        
-        const inventarioColumns = [
-            { header: 'Producto', dataKey: 'nombre' },
-            { header: 'Descripción', dataKey: 'descripcion' },
-            { header: 'Existencias', dataKey: 'unidadesExistentes' },
-            { header: 'Precio Unit ($)', dataKey: 'precioUnitarioDolar' },
-            { header: 'Precio Unit (Bs)', dataKey: 'precioUnitarioBolivar' }
-        ];
-        
-        const inventarioRows = productos.map(producto => ({
-            nombre: producto.nombre,
-            descripcion: producto.descripcion,
-            unidadesExistentes: producto.unidadesExistentes,
-            precioUnitarioDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-            precioUnitarioBolivar: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
-        }));
-        
-        doc.autoTable({
-            startY: 25,
-            head: [inventarioColumns.map(col => col.header)],
-            body: inventarioRows.map(row => inventarioColumns.map(col => row[col.dataKey])),
-            margin: { horizontal: 10 },
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [26, 188, 156], textColor: 255 },
-            didDrawCell: (data) => {
-                if (data.column.dataKey === 'unidadesExistentes' && data.cell.raw <= 5) {
-                    doc.setTextColor(255, 0, 0);
-                }
+        // Agrupar ventas por fecha
+        const ventasPorFecha = {};
+        ventasDiarias.forEach(venta => {
+            if (!ventasPorFecha[venta.fecha]) {
+                ventasPorFecha[venta.fecha] = [];
             }
+            ventasPorFecha[venta.fecha].push(venta);
+        });
+
+        // Ordenar fechas de más reciente a más antigua
+        const fechasOrdenadas = Object.keys(ventasPorFecha).sort((a, b) => new Date(b) - new Date(a));
+        
+        // Generar una página por cada fecha
+        fechasOrdenadas.forEach((fecha, i) => {
+            if (i > 0) doc.addPage();
+            
+            doc.setFontSize(16);
+            doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${fecha}`, 105, 22, { align: 'center' });
+            
+            const ventasDelDia = ventasPorFecha[fecha];
+            const totalDolar = ventasDelDia.reduce((sum, venta) => sum + venta.totalDolar, 0);
+            const totalBolivar = ventasDelDia.reduce((sum, venta) => sum + venta.totalBolivar, 0);
+            
+            doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
+            doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
+            
+            const columns = [
+                { header: 'Producto', dataKey: 'producto' },
+                { header: 'Cantidad', dataKey: 'cantidad' },
+                { header: 'P.Unit ($)', dataKey: 'precioUnitarioDolar' },
+                { header: 'P.Unit (Bs)', dataKey: 'precioUnitarioBolivar' },
+                { header: 'Total ($)', dataKey: 'totalDolar' },
+                { header: 'Total (Bs)', dataKey: 'totalBolivar' }
+            ];
+            
+            const rows = ventasDelDia.map(venta => ({
+                producto: venta.producto,
+                cantidad: venta.cantidad,
+                precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
+                precioUnitarioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
+                totalDolar: `$${venta.totalDolar.toFixed(2)}`,
+                totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
+            }));
+            
+            doc.autoTable({
+                startY: 45,
+                head: [columns.map(col => col.header)],
+                body: rows.map(row => columns.map(col => row[col.dataKey])),
+                margin: { horizontal: 10 },
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+            });
         });
         
         // Método alternativo para móviles
@@ -473,7 +486,7 @@ function generarReporteDiario() {
             nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
             mostrarToast("✅ Reporte generado. Abriendo en nueva ventana...");
         } else {
-            doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.save(`reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`);
             mostrarToast("✅ Reporte diario generado con éxito");
         }
     } catch (error) {
