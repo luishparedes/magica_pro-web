@@ -362,38 +362,29 @@ function ajustarInventario(index, operacion) {
             return;
         }
         
-        // Registrar como venta
+        // Registrar la venta
         const hoy = new Date();
         const fechaKey = hoy.toLocaleDateString();
+        const horaKey = hoy.toLocaleTimeString();
         
-        // Limpiar ventas antiguas (mantener solo 4 días)
-        limpiarVentasAntiguas();
+        // Crear registro de venta
+        const venta = {
+            fecha: fechaKey,
+            hora: horaKey,
+            producto: producto.nombre,
+            descripcion: producto.descripcion,
+            cantidad: cantidad,
+            precioUnitarioDolar: producto.precioUnitarioDolar,
+            precioUnitarioBolivar: producto.precioUnitarioBolivar,
+            totalDolar: cantidad * producto.precioUnitarioDolar,
+            totalBolivar: cantidad * producto.precioUnitarioBolivar
+        };
         
-        // Buscar si ya existe registro para este producto hoy
-        const ventaExistenteIndex = ventasDiarias.findIndex(v => 
-            v.fecha === fechaKey && v.producto === producto.nombre);
-        
-        if (ventaExistenteIndex >= 0) {
-            // Actualizar venta existente
-            ventasDiarias[ventaExistenteIndex].cantidad += cantidad;
-            ventasDiarias[ventaExistenteIndex].totalDolar += cantidad * producto.precioUnitarioDolar;
-            ventasDiarias[ventaExistenteIndex].totalBolivar += cantidad * producto.precioUnitarioBolivar;
-        } else {
-            // Crear nueva venta
-            const venta = {
-                fecha: fechaKey,
-                producto: producto.nombre,
-                cantidad: cantidad,
-                precioUnitarioDolar: producto.precioUnitarioDolar,
-                precioUnitarioBolivar: producto.precioUnitarioBolivar,
-                totalDolar: cantidad * producto.precioUnitarioDolar,
-                totalBolivar: cantidad * producto.precioUnitarioBolivar,
-                tipo: 'venta'
-            };
-            ventasDiarias.push(venta);
-        }
-        
+        ventasDiarias.push(venta);
         localStorage.setItem('ventasDiarias', JSON.stringify(ventasDiarias));
+        
+        // Mostrar resumen de venta
+        mostrarToast(`✅ Venta registrada: ${cantidad} ${producto.nombre} - Total: $${venta.totalDolar.toFixed(2)} / Bs${venta.totalBolivar.toFixed(2)}`);
     }
 
     // Actualizar inventario
@@ -403,7 +394,6 @@ function ajustarInventario(index, operacion) {
     
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
-    mostrarToast(`✅ ${operacion === 'sumar' ? 'Inventario actualizado' : 'Venta registrada'}: ${producto.nombre} - ${operacion === 'sumar' ? '+' : '-'}${cantidad}`);
 }
 
 function generarReporteDiario() {
@@ -412,88 +402,87 @@ function generarReporteDiario() {
         return;
     }
 
-    // Verificar si estamos en móvil
-    if (esDispositivoMovil()) {
-        if (!confirm("📱 Generar reporte en móvil puede ser lento. ¿Continuar?")) {
-            return;
-        }
+    // Pedir fecha específica para el reporte
+    const fechaReporte = prompt("Ingrese la fecha del reporte (DD/MM/AAAA):", new Date().toLocaleDateString());
+    
+    if (!fechaReporte) return;
+
+    // Filtrar ventas solo para la fecha especificada
+    const ventasDelDia = ventasDiarias.filter(venta => venta.fecha === fechaReporte);
+    
+    if (ventasDelDia.length === 0) {
+        mostrarToast(`⚠️ No hay ventas registradas para el ${fechaReporte}`, "warning");
+        return;
     }
 
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // Agrupar ventas por fecha
-        const ventasPorFecha = {};
-        ventasDiarias.forEach(venta => {
-            if (!ventasPorFecha[venta.fecha]) {
-                ventasPorFecha[venta.fecha] = [];
+        // Encabezado
+        doc.setFontSize(16);
+        doc.text(`Reporte de Ventas Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fechaReporte}`, 105, 22, { align: 'center' });
+        
+        // Calcular totales
+        const totalDolar = ventasDelDia.reduce((sum, venta) => sum + venta.totalDolar, 0);
+        const totalBolivar = ventasDelDia.reduce((sum, venta) => sum + venta.totalBolivar, 0);
+        
+        // Tabla de ventas
+        doc.autoTable({
+            startY: 30,
+            head: [
+                ['Producto', 'Descripción', 'Cantidad', 'P.Unit ($)', 'P.Unit (Bs)', 'Total ($)', 'Total (Bs)']
+            ],
+            body: ventasDelDia.map(venta => [
+                venta.producto,
+                venta.descripcion,
+                venta.cantidad,
+                `$${venta.precioUnitarioDolar.toFixed(2)}`,
+                `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
+                `$${venta.totalDolar.toFixed(2)}`,
+                `Bs${venta.totalBolivar.toFixed(2)}`
+            ]),
+            margin: { horizontal: 10 },
+            styles: { 
+                fontSize: 8, 
+                cellPadding: 3,
+                overflow: 'linebreak'
+            },
+            headStyles: { 
+                fillColor: [41, 128, 185],
+                textColor: 255,
+                fontSize: 9
+            },
+            columnStyles: {
+                0: { cellWidth: 30 }, // Producto
+                1: { cellWidth: 25 }, // Descripción
+                2: { cellWidth: 15 }, // Cantidad
+                3: { cellWidth: 20 }, // P.Unit ($)
+                4: { cellWidth: 20 }, // P.Unit (Bs)
+                5: { cellWidth: 20 }, // Total ($)
+                6: { cellWidth: 20 }  // Total (Bs)
             }
-            ventasPorFecha[venta.fecha].push(venta);
-        });
-
-        // Ordenar fechas de más reciente a más antigua
-        const fechasOrdenadas = Object.keys(ventasPorFecha).sort((a, b) => new Date(b) - new Date(a));
-        
-        // Generar una página por cada fecha
-        fechasOrdenadas.forEach((fecha, i) => {
-            if (i > 0) doc.addPage();
-            
-            doc.setFontSize(16);
-            doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text(`Fecha: ${fecha}`, 105, 22, { align: 'center' });
-            
-            const ventasDelDia = ventasPorFecha[fecha];
-            const totalDolar = ventasDelDia.reduce((sum, venta) => sum + venta.totalDolar, 0);
-            const totalBolivar = ventasDelDia.reduce((sum, venta) => sum + venta.totalBolivar, 0);
-            
-            doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
-            doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
-            
-            const columns = [
-                { header: 'Producto', dataKey: 'producto' },
-                { header: 'Cantidad', dataKey: 'cantidad' },
-                { header: 'P.Unit ($)', dataKey: 'precioUnitarioDolar' },
-                { header: 'P.Unit (Bs)', dataKey: 'precioUnitarioBolivar' },
-                { header: 'Total ($)', dataKey: 'totalDolar' },
-                { header: 'Total (Bs)', dataKey: 'totalBolivar' }
-            ];
-            
-            const rows = ventasDelDia.map(venta => ({
-                producto: venta.producto,
-                cantidad: venta.cantidad,
-                precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
-                precioUnitarioBolivar: `Bs${venta.precioUnitarioBolivar.toFixed(2)}`,
-                totalDolar: `$${venta.totalDolar.toFixed(2)}`,
-                totalBolivar: `Bs${venta.totalBolivar.toFixed(2)}`
-            }));
-            
-            doc.autoTable({
-                startY: 45,
-                head: [columns.map(col => col.header)],
-                body: rows.map(row => columns.map(col => row[col.dataKey])),
-                margin: { horizontal: 10 },
-                styles: { fontSize: 8, cellPadding: 2 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255 }
-            });
         });
         
-        // Método alternativo para móviles
-        if (esDispositivoMovil()) {
-            const pdfData = doc.output('datauristring');
-            const nuevaVentana = window.open();
-            nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
-            mostrarToast("✅ Reporte generado. Abriendo en nueva ventana...");
-        } else {
-            doc.save(`reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`);
-            mostrarToast("✅ Reporte diario generado con éxito");
-        }
+        // Totales al final
+        const finalY = doc.autoTable.previous.finalY + 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text(`Total General en Dólares: $${totalDolar.toFixed(2)}`, 14, finalY);
+        doc.text(`Total General en Bolívares: Bs${totalBolivar.toFixed(2)}`, 14, finalY + 10);
+        doc.text(`Tasa BCV utilizada: ${tasaBCVGuardada}`, 14, finalY + 20);
+        
+        // Guardar PDF
+        const nombreArchivo = `ventas_${fechaReporte.replace(/\//g, '-')}.pdf`;
+        doc.save(nombreArchivo);
+        mostrarToast(`✅ Reporte del ${fechaReporte} generado con éxito`);
+        
     } catch (error) {
         mostrarToast("❌ Error al generar reporte: " + error.message, "error");
-        if (esDispositivoMovil()) {
-            mostrarToast("📱 En móviles, prueba con menos datos o usa una computadora", "warning");
-        }
+        console.error(error);
     }
 }
 
