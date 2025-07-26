@@ -196,13 +196,14 @@
             <button onclick="generarReporteDiario()" class="generar-pdf">Generar Reporte Diario</button>
             <button onclick="mostrarListaCostos()" class="lista-costos">Mostrar Lista de Costos</button>
             <button onclick="generarRespaldoCompleto()" class="generar-respaldo">Generar Respaldo Completo</button>
+            <button onclick="cerrarSesion()" class="btn-cerrar-sesion">? Cerrar Sesión</button>
             <button onclick="limpiarLista()" class="limpiar-lista">Limpiar Lista</button>
         </div>
 
         <div id="listaCostosContainer" style="display: none;">
             <div class="costos-header">
                 <h3>Lista de Costos de Productos</h3>
-                <button onclick="generarPDFCostos()" class="generar-pdf-costos">📄 Convertir a PDF</button>
+                <button onclick="generarPDFCostos()" class="generar-pdf-costos">?? Convertir a PDF</button>
             </div>
             <ul id="listaCostos"></ul>
         </div>
@@ -227,7 +228,7 @@
             
             if (savedVersion !== APP_VERSION) {
                 setTimeout(() => {
-                    mostrarToast(`✅ Versión ${APP_VERSION} cargada`, "success", 3000);
+                    mostrarToast(`? Versión ${APP_VERSION} cargada`, "success", 3000);
                 }, 2000);
                 localStorage.setItem('appVersion', APP_VERSION);
             }
@@ -249,9 +250,7 @@
             }, 5000);
         });
     </script>
-    <div class="nav-buttons">
-        <button onclick="scrollToTop()" class="nav-button" title="Ir arriba">▲</button>
-        <button onclick="scrollToBottom()" class="nav-button" title="Ir abajo">▼</button>
-    </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
