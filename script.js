@@ -210,21 +210,22 @@ function generarRespaldoCompleto() {
         // Tabla principal optimizada para móviles
       
          const columns = [
-            { header: 'Producto', dataKey: 'nombre' },
-            { header: 'Unid/Caja', dataKey: 'unidades' },
-            { header: 'Costo$', dataKey: 'costo' },
-            { header: 'Gan%', dataKey: 'ganancia' },
-            { header: 'P.Venta$', dataKey: 'pVentaDolar' },
-            { header: 'P.VentaBs', dataKey: 'pVentaBs' }
-        ];
-        const rows = productos.map(producto => ({
-            nombre: producto.nombre.substring(0, 15), // Limita caracteres
-              unidades: producto.unidadesPorCaja,
-            costo: `$${producto.costo.toFixed(2)}`,
-            ganancia: `${(producto.ganancia * 100).toFixed(0)}%`,
-            pVentaDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-            pVentaBs: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
-        }));
+        { header: 'Producto', dataKey: 'nombre' },
+        { header: 'Unid/Caja', dataKey: 'unidades' },
+        { header: 'Costo$', dataKey: 'costo' },
+        { header: 'Gan%', dataKey: 'ganancia' },
+        { header: 'P.Venta$', dataKey: 'pVentaDolar' },
+        { header: 'P.VentaBs', dataKey: 'pVentaBs' }
+    ];
+    
+    const rows = productos.map(producto => ({
+        nombre: producto.nombre,
+        unidades: producto.unidadesPorCaja,
+        costo: `$${producto.costo.toFixed(2)}`,
+        ganancia: `${(producto.ganancia * 100).toFixed(0)}%`,
+        pVentaDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+        pVentaBs: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
+    }));
 
         doc.autoTable({
             startY: 35,
