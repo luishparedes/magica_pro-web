@@ -206,16 +206,6 @@ p {
     background: linear-gradient(to right, #455a64, #546e7a);
 }
 
-/* Botón Cerrar Sesión */
-#listaProductos button.btn-cerrar-sesion {
-    background: linear-gradient(to right, #607d8b, #78909c);
-    margin-top: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
 #listaProductos button.btn-cerrar-sesion:hover {
     background: linear-gradient(to right, #455a64, #546e7a);
 }
