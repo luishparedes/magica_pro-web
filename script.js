@@ -9,20 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarDatosIniciales();
     actualizarLista();
 });
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-}
-
-function scrollToBottom() {
-    window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-    });
-}
-
 // ================= FUNCIONES PRINCIPALES =================
 
 function cargarDatosIniciales() {
