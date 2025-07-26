@@ -325,35 +325,50 @@ function guardarNombreEstablecimiento() {
 
 function ajustarInventario(index, operacion) {
     const producto = productos[index];
-    const cantidad = parseInt(prompt(`Cantidad a ${operacion === 'sumar' ? 'sumar' : 'restar'}:`, "1")) || 0;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = '1';
+    input.min = '1';
+    input.style.width = '60px';
+    
+    const confirmacion = confirm(`¿Desea ${operacion === 'sumar' ? 'sumar' : 'restar'} unidades de ${producto.nombre}?`);
+    
+    if (!confirmacion) return;
+    
+    const cantidad = parseInt(prompt(`Ingrese la cantidad a ${operacion === 'sumar' ? 'sumar' : 'restar'}:`, "1")) || 0;
     
     if (cantidad <= 0) {
         mostrarToast("⚠️ Ingrese una cantidad válida", "error");
         return;
     }
 
-    if (operacion === 'restar' && producto.unidadesExistentes < cantidad) {
-        mostrarToast("⚠️ No hay suficientes unidades en inventario", "error");
-        return;
-    }
-
-    if (operacion === 'sumar') {
-        producto.unidadesExistentes += cantidad;
-    } else {
-        producto.unidadesExistentes -= cantidad;
+    if (operacion === 'restar') {
+        if (producto.unidadesExistentes < cantidad) {
+            mostrarToast("⚠️ No hay suficientes unidades en inventario", "error");
+            return;
+        }
+        
+        // Registrar como venta solo si es resta
+        const hoy = new Date().toLocaleDateString();
         const venta = {
-            fecha: new Date().toLocaleString(),
+            fecha: hoy,
             producto: producto.nombre,
             cantidad: cantidad,
             precioUnitarioDolar: producto.precioUnitarioDolar,
             precioUnitarioBolivar: producto.precioUnitarioBolivar,
             totalDolar: cantidad * producto.precioUnitarioDolar,
-            totalBolivar: cantidad * producto.precioUnitarioBolivar
+            totalBolivar: cantidad * producto.precioUnitarioBolivar,
+            tipo: 'ajuste_inventario' // Para diferenciar de ventas normales
         };
         ventasDiarias.push(venta);
         localStorage.setItem('ventasDiarias', JSON.stringify(ventasDiarias));
     }
 
+    // Actualizar inventario
+    producto.unidadesExistentes = operacion === 'sumar' ? 
+        producto.unidadesExistentes + cantidad : 
+        producto.unidadesExistentes - cantidad;
+    
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
     mostrarToast(`✅ Inventario actualizado: ${producto.nombre} - ${operacion === 'sumar' ? '+' : '-'}${cantidad}`);
