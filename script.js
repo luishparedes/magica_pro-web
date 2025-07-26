@@ -1,4 +1,24 @@
+// Sistema de actualización automática
+const APP_VERSION = "1.2.1"; // Incrementa este número con cada actualización
 
+function checkForUpdates() {
+    const lastVersion = localStorage.getItem('appVersion');
+    
+    if (!lastVersion || lastVersion !== APP_VERSION) {
+        // Forzar recarga limpia si es nueva versión
+        if (confirm('¡Nueva actualización disponible! ¿Deseas cargarla ahora?')) {
+            localStorage.clear();
+            localStorage.setItem('appVersion', APP_VERSION);
+            window.location.reload(true); // Recarga forzada sin caché
+        }
+    } else {
+        localStorage.setItem('appVersion', APP_VERSION);
+    }
+}
+
+// Verificar al cargar y cada 6 horas
+document.addEventListener('DOMContentLoaded', checkForUpdates);
+setInterval(checkForUpdates, 21600000); // 6 horas en milisegundos
 // Datos persistentes
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
 let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
