@@ -360,7 +360,10 @@ function ajustarInventario(index, operacion) {
 }
 
 function generarReporteDiario() {
-    if (ventasDiarias.length === 0) {
+    const hoy = new Date().toLocaleDateString();
+    const ventasHoy = ventasDiarias.filter(venta => new Date(venta.fecha).toLocaleDateString() === hoy);
+
+    if (ventasHoy.length === 0) {
         mostrarToast("⚠️ No hay ventas registradas hoy", "warning");
         return;
     }
@@ -379,10 +382,10 @@ function generarReporteDiario() {
         doc.setFontSize(16);
         doc.text(`Reporte Diario - ${nombreEstablecimiento || 'Mi Negocio'}`, 105, 15, { align: 'center' });
         doc.setFontSize(10);
-        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+        doc.text(`Fecha: ${hoy}`, 105, 22, { align: 'center' });
         
-        const totalDolar = ventasDiarias.reduce((sum, venta) => sum + venta.totalDolar, 0);
-        const totalBolivar = ventasDiarias.reduce((sum, venta) => sum + venta.totalBolivar, 0);
+        const totalDolar = ventasHoy.reduce((sum, venta) => sum + venta.totalDolar, 0);
+        const totalBolivar = ventasHoy.reduce((sum, venta) => sum + venta.totalBolivar, 0);
         
         doc.text(`Total Ventas $: ${totalDolar.toFixed(2)}`, 105, 30, { align: 'center' });
         doc.text(`Total Ventas Bs: ${totalBolivar.toFixed(2)}`, 105, 36, { align: 'center' });
@@ -396,7 +399,7 @@ function generarReporteDiario() {
             { header: 'Total (Bs)', dataKey: 'totalBolivar' }
         ];
         
-        const rows = ventasDiarias.map(venta => ({
+        const rows = ventasHoy.map(venta => ({
             producto: venta.producto,
             cantidad: venta.cantidad,
             precioUnitarioDolar: `$${venta.precioUnitarioDolar.toFixed(2)}`,
@@ -592,18 +595,6 @@ function mostrarToast(mensaje, tipo = 'success') {
 
 function esDispositivoMovil() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-function cerrarSesion() {
-    let mensaje = "⚠️ Antes de cerrar:\n\n1. Recomendamos GENERAR UN PDF de respaldo.\n";
-    
-    if (esDispositivoMovil()) {
-        mensaje += "\n📱 Advertencia para móviles:\n- La generación de PDF puede fallar.\n- Use una computadora para respaldos seguros.\n";
-    }
-
-    if (confirm(mensaje)) {
-        mostrarToast("✅ Sesión cerrada. Tus datos están seguros.");
-    }
 }
 
 function limpiarLista() {
