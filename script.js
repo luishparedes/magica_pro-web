@@ -1,24 +1,3 @@
-// Sistema de actualización automática
-const APP_VERSION = "1.2.1"; // Incrementa este número con cada actualización
-
-function checkForUpdates() {
-    const lastVersion = localStorage.getItem('appVersion');
-    
-    if (!lastVersion || lastVersion !== APP_VERSION) {
-        // Forzar recarga limpia si es nueva versión
-        if (confirm('¡Nueva actualización disponible! ¿Deseas cargarla ahora?')) {
-            localStorage.clear();
-            localStorage.setItem('appVersion', APP_VERSION);
-            window.location.reload(true); // Recarga forzada sin caché
-        }
-    } else {
-        localStorage.setItem('appVersion', APP_VERSION);
-    }
-}
-
-// Verificar al cargar y cada 6 horas
-document.addEventListener('DOMContentLoaded', checkForUpdates);
-setInterval(checkForUpdates, 21600000); // 6 horas en milisegundos
 // Datos persistentes
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
 let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
@@ -70,7 +49,7 @@ function guardarProducto() {
     if (!validarCamposNumericos(costo, ganancia, unidadesPorCaja)) return;
 
     if (productoExiste(nombre)) {
-        if (!confirm(`⚠️ "${nombre}" ya existe. ¿Deseas actualizarlo?`)) return;
+        if (!confirm(`?? "${nombre}" ya existe. ¿Deseas actualizarlo?`)) return;
         const index = productos.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
         productos.splice(index, 1);
     }
@@ -86,7 +65,7 @@ function mostrarListaCostos() {
     const lista = document.getElementById('listaCostos');
     
     if (productos.length === 0) {
-        mostrarToast("⚠️ No hay productos registrados", "warning");
+        mostrarToast("?? No hay productos registrados", "warning");
         container.style.display = 'none';
         return;
     }
@@ -119,13 +98,13 @@ function actualizarListaCostos() {
 
 function generarPDFCostos() {
     if (productos.length === 0) {
-        mostrarToast("⚠️ No hay productos para generar el PDF", "warning");
+        mostrarToast("?? No hay productos para generar el PDF", "warning");
         return;
     }
 
     // Verificar si estamos en móvil
     if (esDispositivoMovil()) {
-        if (!confirm("📱 Estás en un dispositivo móvil. La generación de PDF puede fallar. ¿Continuar?")) {
+        if (!confirm("?? Estás en un dispositivo móvil. La generación de PDF puede fallar. ¿Continuar?")) {
             return;
         }
     }
@@ -168,15 +147,15 @@ function generarPDFCostos() {
             const pdfData = doc.output('datauristring');
             const nuevaVentana = window.open();
             nuevaVentana.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
-            mostrarToast("✅ PDF generado. Abriendo en nueva ventana...");
+            mostrarToast("? PDF generado. Abriendo en nueva ventana...");
         } else {
             doc.save(`lista_costos_${new Date().toISOString().split('T')[0]}.pdf`);
-            mostrarToast("✅ Lista de costos generada en PDF");
+            mostrarToast("? Lista de costos generada en PDF");
         }
     } catch (error) {
-        mostrarToast("❌ Error al generar PDF: " + error.message, "error");
+        mostrarToast("? Error al generar PDF: " + error.message, "error");
         if (esDispositivoMovil()) {
-            mostrarToast("📱 En móviles, prueba con Chrome o Firefox", "warning");
+            mostrarToast("?? En móviles, prueba con Chrome o Firefox", "warning");
         }
     }
 }
@@ -185,7 +164,7 @@ function generarPDFCostos() {
 
 function generarRespaldoCompleto() {
     if (productos.length === 0 && ventasDiarias.length === 0) {
-        mostrarToast("⚠️ No hay datos para respaldar", "warning");
+        mostrarToast("?? No hay datos para respaldar", "warning");
         return;
     }
 
@@ -195,7 +174,7 @@ function generarRespaldoCompleto() {
     
     if (esAndroid) {
         const confirmacion = confirm(
-            "📱 Generar PDF en Android:\n\n" +
+            "?? Generar PDF en Android:\n\n" +
             "1. Usa Chrome para mejor compatibilidad\n" +
             "2. PDFs grandes pueden tardar\n" +
             "3. Verifica la carpeta 'Descargas'\n\n" +
@@ -273,12 +252,12 @@ function generarRespaldoCompleto() {
             if (window.saveAs) {
                 const pdfBlob = doc.output('blob');
                 saveAs(pdfBlob, `respaldo_${new Date().toISOString().slice(0,10)}.pdf`);
-                mostrarToast("✅ PDF guardado en Descargas");
+                mostrarToast("? PDF guardado en Descargas");
             } 
             // Opción 2: Abrir en nueva pestaña
             else if (esChrome) {
                 const pdfData = doc.output('dataurlnewwindow');
-                mostrarToast("✅ Abriendo PDF en Chrome...");
+                mostrarToast("? Abriendo PDF en Chrome...");
             } 
             // Opción 3: Descarga tradicional con fallback
             else {
@@ -288,7 +267,7 @@ function generarRespaldoCompleto() {
                     const pdfData = doc.output('datauristring');
                     const ventana = window.open();
                     ventana.document.write(`<iframe src='${pdfData}' style='width:100%;height:100%;border:none'></iframe>`);
-                    mostrarToast("ℹ️ Usa Chrome para descargar directamente");
+                    mostrarToast("?? Usa Chrome para descargar directamente");
                 }
             }
         } else {
@@ -297,10 +276,10 @@ function generarRespaldoCompleto() {
         }
     } catch (error) {
         console.error("Error generando PDF:", error);
-        mostrarToast(`❌ Error: ${error.message}`, "error");
+        mostrarToast(`? Error: ${error.message}`, "error");
         
         if (esAndroid) {
-            mostrarToast("📌 Solución: \n1. Usa Chrome\n2. Reduce cantidad de productos\n3. Reinicia la app", "warning", 5000);
+            mostrarToast("?? Solución: \n1. Usa Chrome\n2. Reduce cantidad de productos\n3. Reinicia la app", "warning", 5000);
         }
     }
 }
@@ -318,9 +297,9 @@ function actualizarTasaBCV() {
     if (productos.length > 0) {
         actualizarPreciosConNuevaTasa(nuevaTasa);
         actualizarLista();
-        mostrarToast(`✅ Tasa BCV actualizada a: ${nuevaTasa}\n${productos.length} productos recalculados.`);
+        mostrarToast(`? Tasa BCV actualizada a: ${nuevaTasa}\n${productos.length} productos recalculados.`);
     } else {
-        mostrarToast("✅ Tasa BCV actualizada (no hay productos para recalcular)");
+        mostrarToast("? Tasa BCV actualizada (no hay productos para recalcular)");
     }
 }
 
@@ -335,11 +314,11 @@ function actualizarPreciosConNuevaTasa(nuevaTasa) {
 function guardarNombreEstablecimiento() {
     nombreEstablecimiento = document.getElementById('nombreEstablecimiento').value.trim();
     if (!nombreEstablecimiento) {
-        mostrarToast("⚠️ Ingrese un nombre válido", "error");
+        mostrarToast("?? Ingrese un nombre válido", "error");
         return;
     }
     localStorage.setItem('nombreEstablecimiento', nombreEstablecimiento);
-    mostrarToast(`✅ Nombre guardado: "${nombreEstablecimiento}"`);
+    mostrarToast(`? Nombre guardado: "${nombreEstablecimiento}"`);
 }
 
 function limpiarVentasAntiguas() {
@@ -356,11 +335,11 @@ function limpiarVentasAntiguas() {
 }
 
 function limpiarLista() {
-    if (confirm("⚠️ ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
+    if (confirm("?? ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
         productos = [];
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
-        mostrarToast("🗑️ Todos los productos han sido eliminados");
+        mostrarToast("??? Todos los productos han sido eliminados");
     }
 }
 
@@ -372,13 +351,13 @@ function ajustarInventario(index, operacion) {
     const cantidad = parseInt(prompt(`Ingrese la cantidad a ${operacion === 'sumar' ? 'sumar' : 'restar'}:`, "1")) || 0;
     
     if (cantidad <= 0) {
-        mostrarToast("⚠️ Ingrese una cantidad válida", "error");
+        mostrarToast("?? Ingrese una cantidad válida", "error");
         return;
     }
 
     if (operacion === 'restar') {
         if (producto.unidadesExistentes < cantidad) {
-            mostrarToast("⚠️ No hay suficientes unidades en inventario", "error");
+            mostrarToast("?? No hay suficientes unidades en inventario", "error");
             return;
         }
         
@@ -404,7 +383,7 @@ function ajustarInventario(index, operacion) {
         localStorage.setItem('ventasDiarias', JSON.stringify(ventasDiarias));
         
         // Mostrar resumen de venta
-        mostrarToast(`✅ Venta registrada: ${cantidad} ${producto.nombre} - Total: $${venta.totalDolar.toFixed(2)} / Bs${venta.totalBolivar.toFixed(2)}`);
+        mostrarToast(`? Venta registrada: ${cantidad} ${producto.nombre} - Total: $${venta.totalDolar.toFixed(2)} / Bs${venta.totalBolivar.toFixed(2)}`);
     }
 
     // Actualizar inventario
@@ -418,7 +397,7 @@ function ajustarInventario(index, operacion) {
 
 function generarReporteDiario() {
     if (ventasDiarias.length === 0) {
-        mostrarToast("⚠️ No hay ventas registradas", "warning");
+        mostrarToast("?? No hay ventas registradas", "warning");
         return;
     }
 
@@ -431,7 +410,7 @@ function generarReporteDiario() {
     const ventasDelDia = ventasDiarias.filter(venta => venta.fecha === fechaReporte);
     
     if (ventasDelDia.length === 0) {
-        mostrarToast(`⚠️ No hay ventas registradas para el ${fechaReporte}`, "warning");
+        mostrarToast(`?? No hay ventas registradas para el ${fechaReporte}`, "warning");
         return;
     }
 
@@ -498,10 +477,10 @@ function generarReporteDiario() {
         // Guardar PDF
         const nombreArchivo = `ventas_${fechaReporte.replace(/\//g, '-')}.pdf`;
         doc.save(nombreArchivo);
-        mostrarToast(`✅ Reporte del ${fechaReporte} generado con éxito`);
+        mostrarToast(`? Reporte del ${fechaReporte} generado con éxito`);
         
     } catch (error) {
-        mostrarToast("❌ Error al generar reporte: " + error.message, "error");
+        mostrarToast("? Error al generar reporte: " + error.message, "error");
         console.error(error);
     }
 }
@@ -533,7 +512,7 @@ function guardarProductoEnLista(producto) {
     localStorage.setItem('productos', JSON.stringify(productos));
     actualizarLista();
     reiniciarCalculadora();
-    mostrarToast("✅ Producto guardado exitosamente");
+    mostrarToast("? Producto guardado exitosamente");
 }
 
 // ================= FUNCIONES DE INTERFAZ =================
@@ -594,7 +573,7 @@ function reiniciarCalculadora() {
 
 function validarTasaBCV(tasa) {
     if (isNaN(tasa) || tasa <= 0) {
-        mostrarToast("⚠️ Ingrese una tasa BCV válida (mayor a cero)", "error");
+        mostrarToast("?? Ingrese una tasa BCV válida (mayor a cero)", "error");
         return false;
     }
     return true;
@@ -602,7 +581,7 @@ function validarTasaBCV(tasa) {
 
 function validarCamposNumericos(costo, ganancia, unidades) {
     if (isNaN(costo) || costo <= 0 || isNaN(ganancia) || ganancia <= 0 || isNaN(unidades) || unidades <= 0) {
-        mostrarToast("⚠️ Complete todos los campos con valores válidos (mayores a cero)", "error");
+        mostrarToast("?? Complete todos los campos con valores válidos (mayores a cero)", "error");
         return false;
     }
     return true;
@@ -610,7 +589,7 @@ function validarCamposNumericos(costo, ganancia, unidades) {
 
 function validarCamposTexto(nombre, descripcion) {
     if (!nombre || !descripcion) {
-        mostrarToast("⚠️ Complete todos los campos", "error");
+        mostrarToast("?? Complete todos los campos", "error");
         return false;
     }
     return true;
@@ -635,11 +614,11 @@ function esDispositivoMovil() {
 }
 
 function limpiarLista() {
-    if (confirm("⚠️ ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
+    if (confirm("?? ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
         productos = [];
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
-        mostrarToast("🗑️ Todos los productos han sido eliminados");
+        mostrarToast("??? Todos los productos han sido eliminados");
     }
 }
 
@@ -706,7 +685,7 @@ function editarProducto(index) {
     productos.splice(index, 1);
     localStorage.setItem('productos', JSON.stringify(productos));
     
-    mostrarToast(`✏️ Editando producto: ${producto.nombre}`);
+    mostrarToast(`?? Editando producto: ${producto.nombre}`);
 }
 
 function eliminarProducto(index) {
@@ -715,7 +694,7 @@ function eliminarProducto(index) {
         productos.splice(index, 1);
         localStorage.setItem('productos', JSON.stringify(productos));
         actualizarLista();
-        mostrarToast(`🗑️ Producto eliminado: ${producto.nombre}`);
+        mostrarToast(`??? Producto eliminado: ${producto.nombre}`);
     }
 }
 
