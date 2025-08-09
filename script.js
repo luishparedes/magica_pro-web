@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarDatosIniciales();
     actualizarLista();
 });
+
 // ================= FUNCIONES PRINCIPALES =================
 
 function cargarDatosIniciales() {
@@ -208,24 +209,26 @@ function generarRespaldoCompleto() {
         doc.text(`Tasa BCV: ${tasaBCVGuardada} | Productos: ${productos.length}`, 105, 28, { align: 'center' });
 
         // Tabla principal optimizada para móviles
-      
-         const columns = [
-        { header: 'Producto', dataKey: 'nombre' },
-        { header: 'Unid/Caja', dataKey: 'unidades' },
-        { header: 'Costo$', dataKey: 'costo' },
-        { header: 'Gan%', dataKey: 'ganancia' },
-        { header: 'P.Venta$', dataKey: 'pVentaDolar' },
-        { header: 'P.VentaBs', dataKey: 'pVentaBs' }
-    ];
-    
-    const rows = productos.map(producto => ({
-        nombre: producto.nombre,
-        unidades: producto.unidadesPorCaja,
-        costo: `$${producto.costo.toFixed(2)}`,
-        ganancia: `${(producto.ganancia * 100).toFixed(0)}%`,
-        pVentaDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
-        pVentaBs: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
-    }));
+        const columns = [
+            { header: 'Producto', dataKey: 'nombre' },
+            { header: 'Unid/Caja', dataKey: 'unidades' },
+            { header: 'Costo$', dataKey: 'costo' },
+            { header: 'Gan%', dataKey: 'ganancia' },
+            { header: 'P.Venta$', dataKey: 'pVentaDolar' },
+            { header: 'P.VentaBs', dataKey: 'pVentaBs' }
+        ];
+        
+        // ORDENAR PRODUCTOS ALFABÉTICAMENTE ANTES DE GENERAR EL PDF
+        const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        
+        const rows = productosOrdenados.map(producto => ({
+            nombre: producto.nombre,
+            unidades: producto.unidadesPorCaja,
+            costo: `$${producto.costo.toFixed(2)}`,
+            ganancia: `${(producto.ganancia * 100).toFixed(0)}%`,
+            pVentaDolar: `$${producto.precioUnitarioDolar.toFixed(2)}`,
+            pVentaBs: `Bs${producto.precioUnitarioBolivar.toFixed(2)}`
+        }));
 
         doc.autoTable({
             startY: 35,
@@ -611,15 +614,6 @@ function mostrarToast(mensaje, tipo = 'success') {
 
 function esDispositivoMovil() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-function limpiarLista() {
-    if (confirm("?? ¿Estás seguro de limpiar toda la lista de productos? Esta acción no se puede deshacer.")) {
-        productos = [];
-        localStorage.setItem('productos', JSON.stringify(productos));
-        actualizarLista();
-        mostrarToast("??? Todos los productos han sido eliminados");
-    }
 }
 
 function buscarProducto() {
