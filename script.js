@@ -5,9 +5,9 @@ let tasaBCVGuardada = parseFloat(localStorage.getItem('tasaBCV')) || 0;
 let ventasDiarias = JSON.parse(localStorage.getItem('ventasDiarias')) || [];
 
 // Control de acceso directo
-const ACCESS_PORTAL = "https://luishparedes.github.io/apptiktok2025/";
+const ACCESS_PORTAL = "http://acceso.calculadoramagica.lat/";
 const ALLOWED_REFERRERS = [
-    "luishparedes.github.io/apptiktok2025",
+    "http://acceso.calculadoramagica.lat/",
     "localhost" // Para desarrollo
 ];
 
@@ -803,3 +803,4 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
+
