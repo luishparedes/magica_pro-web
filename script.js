@@ -4,30 +4,38 @@ let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
 let tasaBCVGuardada = parseFloat(localStorage.getItem('tasaBCV')) || 0;
 let ventasDiarias = JSON.parse(localStorage.getItem('ventasDiarias')) || [];
 
-// Control de acceso directo
-const ACCESS_PORTAL = "http://acceso.calculadoramagica.lat/";
+// Control de acceso directo - VERSIÓN MEJORADA
+const ACCESS_PORTAL = "https://acceso.calculadoramagica.lat/";
 const ALLOWED_REFERRERS = [
     "http://acceso.calculadoramagica.lat/",
+    "https://acceso.calculadoramagica.lat/",
+    "calculadoramagica.lat",
     "localhost" // Para desarrollo
 ];
 
-// Verificar si el acceso es directo
+// Función mejorada para verificar acceso
 function esAccesoDirecto() {
-    // Verificar si viene del portal de acceso
-    const referrer = document.referrer.toLowerCase();
-    const vieneDelPortal = ALLOWED_REFERRERS.some(url => referrer.includes(url));
-    
-    // Verificar parámetro de acceso válido en la URL
+    // Verificar token en URL primero (prioridad máxima)
     const urlParams = new URLSearchParams(window.location.search);
-    const tieneTokenValido = urlParams.has('access_token');
+    if (urlParams.has('access_token') || urlParams.has('codigo_acceso') || urlParams.has('token')) {
+        localStorage.setItem('accesoAutorizado', 'true'); // Recordar acceso
+        return false;
+    }
     
-    return !vieneDelPortal && !tieneTokenValido;
+    // Verificar si ya se autorizó previamente
+    if (localStorage.getItem('accesoAutorizado') === 'true') {
+        return false;
+    }
+    
+    // Verificar referrer como último recurso
+    const referrer = document.referrer.toLowerCase();
+    return !ALLOWED_REFERRERS.some(url => referrer.includes(url));
 }
 
-// Configurar temporizador de redirección
+// Configurar temporizador de redirección - VERSIÓN MEJORADA
 function configurarRedireccion() {
     if (esAccesoDirecto()) {
-        // Mostrar advertencia
+        // Mostrar advertencia solo si realmente es acceso no autorizado
         mostrarToast("⚠ ACCESO NO AUTORIZADO: Serás redirigido al portal de acceso en 6 minutos", "error", 10000);
         
         // Configurar temporizador de 6 minutos (360,000 ms)
@@ -44,7 +52,7 @@ function configurarRedireccion() {
 }
 
 // Sistema de actualización
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.2.1"; // Versión incrementada por los cambios
 
 function toggleCopyrightNotice() {
     const notice = document.getElementById('copyrightNotice');
@@ -69,6 +77,11 @@ function checkAppVersion() {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar almacenamiento disponible primero
+    if (!verificarAlmacenamientoDisponible()) {
+        mostrarToast("Advertencia: Almacenamiento local casi lleno", "warning", 5000);
+    }
+    
     configurarRedireccion();
     checkAppVersion();
     
@@ -85,6 +98,31 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarDatosIniciales();
     actualizarLista();
 });
+
+// ================= FUNCIONES DE ALMACENAMIENTO MEJORADAS =================
+
+function verificarAlmacenamientoDisponible() {
+    try {
+        const testKey = '__storage_test__';
+        localStorage.setItem(testKey, testKey);
+        localStorage.removeItem(testKey);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function guardarEnLocalStorage(key, value) {
+    try {
+        const valorAGuardar = typeof value === 'object' ? JSON.stringify(value) : value;
+        localStorage.setItem(key, valorAGuardar);
+        return true;
+    } catch (e) {
+        console.error("Error guardando en localStorage:", e);
+        mostrarToast("Error al guardar datos. Intente con menos datos.", "error");
+        return false;
+    }
+}
 
 // ================= FUNCIONES PRINCIPALES =================
 
@@ -803,4 +841,5 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
+
 
