@@ -1,3 +1,25 @@
+// ===== SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA ===== //
+const VERSION_ACTUAL = "1.0.1"; // CAMBIA ESTE NÚMERO CON CADA ACTUALIZACIÓN
+
+// Verificar si hay una nueva versión
+function verificarActualizacion() {
+    const versionGuardada = localStorage.getItem('appVersion');
+    
+    if (versionGuardada !== VERSION_ACTUAL) {
+        localStorage.setItem('appVersion', VERSION_ACTUAL);
+        
+        if (versionGuardada !== null) {
+            // Mostrar notificación amigable
+            mostrarToast("¡Nueva actualización disponible! La app se recargará automáticamente.", "info");
+            
+            // Recargar después de 3 segundos (da tiempo a ver el mensaje)
+            setTimeout(() => {
+                window.location.reload(true); // Recarga forzada sin caché
+            }, 3000);
+        }
+    }
+}
+
 // Datos persistentes
 let productos = JSON.parse(localStorage.getItem('productos')) || [];
 let nombreEstablecimiento = localStorage.getItem('nombreEstablecimiento') || '';
@@ -733,3 +755,4 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
+
