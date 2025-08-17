@@ -779,3 +779,4 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
+
