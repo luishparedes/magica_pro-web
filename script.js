@@ -1,5 +1,27 @@
 // ===== SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA ===== //
-const VERSION_ACTUAL = "1.0.1"; // CAMBIA ESTE NÚMERO CON CADA ACTUALIZACIÓN
+const VERSION_ACTUAL = "1.0.2"; // CAMBIA ESTE NÚMERO CON CADA ACTUALIZACIÓN
+
+// ===== SISTEMA DE REDIRECCIÓN POR INACTIVIDAD ===== //
+const TIEMPO_INACTIVIDAD = 10 * 60 * 1000; // 10 minutos en milisegundos
+const URL_REDIRECCION = "https://luishparedes.github.io/apptiktok2025/";
+
+let temporizadorInactividad;
+
+function reiniciarTemporizador() {
+    // Limpiar el temporizador existente
+    clearTimeout(temporizadorInactividad);
+    
+    // Iniciar nuevo temporizador
+    temporizadorInactividad = setTimeout(() => {
+        // Redirigir después del tiempo de inactividad
+        window.location.href = URL_REDIRECCION;
+    }, TIEMPO_INACTIVIDAD);
+}
+
+// Eventos que indican actividad del usuario
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evento => {
+    document.addEventListener(evento, reiniciarTemporizador);
+});
 
 // Verificar si hay una nueva versión
 function verificarActualizacion() {
@@ -28,8 +50,10 @@ let ventasDiarias = JSON.parse(localStorage.getItem('ventasDiarias')) || [];
 
 // Cargar datos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    reiniciarTemporizador(); // <-- Esta es la nueva línea añadida
     cargarDatosIniciales();
     actualizarLista();
+    verificarActualizacion(); // Esta línea ya estaba pero puede estar en otro lugar
 });
 // ================= FUNCIONES PRINCIPALES =================
 
@@ -755,4 +779,3 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
-
