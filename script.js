@@ -2,7 +2,7 @@
 const VERSION_ACTUAL = "1.0.2"; // CAMBIA ESTE NÚMERO CON CADA ACTUALIZACIÓN
 
 // ===== SISTEMA DE REDIRECCIÓN POR INACTIVIDAD ===== //
-const TIEMPO_INACTIVIDAD = 10 * 60 * 1000; // 10 minutos en milisegundos
+const TIEMPO_INACTIVIDAD = 3 * 60 * 1000; // 3 minutos en milisegundos
 const URL_REDIRECCION = "https://luishparedes.github.io/apptiktok2025/";
 
 let temporizadorInactividad;
@@ -779,4 +779,5 @@ function imprimirTicket(index) {
     `);
     ventana.document.close();
 }
+
 
